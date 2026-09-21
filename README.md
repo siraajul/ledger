@@ -1,127 +1,188 @@
-# LEDGER
+<div align="center">
 
-A neo-brutalist expense tracker built with Flutter. Log expenses, categorize them, see where the
-money went this month, and lock sensitive actions behind a PIN. All data lives locally on the
-device — no accounts, no network.
+# ▓▓ LEDGER ▓▓
 
-## Screenshots
+### **NO BS. JUST NUMBERS.**
 
-| Home | Stats |
+A neo-brutalist expense tracker that runs entirely on your phone.
+No account. No sync. No telemetry. Just where the money went.
+
+[![Flutter](https://img.shields.io/badge/Flutter-3.47-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.13+-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
+[![BLoC](https://img.shields.io/badge/state-BLoC-1389FD?style=for-the-badge)](https://bloclibrary.dev)
+[![SQLite](https://img.shields.io/badge/storage-SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://pub.dev/packages/sqflite)
+[![Offline](https://img.shields.io/badge/offline-100%25-00E676?style=for-the-badge)](#privacy)
+
+<img src="docs/screenshots/home.png" width="260" alt="Home screen showing this month's total and a list of expenses" />
+<img src="docs/screenshots/stats.png" width="260" alt="Stats screen showing spending by category" />
+<img src="docs/screenshots/add_expense.png" width="260" alt="New expense form with amount, description, and category picker" />
+
+</div>
+
+---
+
+## Why this exists
+
+Most expense apps want an email address before they'll let you write down a $4 coffee. This one
+doesn't. Everything lives in a local SQLite file, the UI is loud on purpose, and a PIN sits in front
+of anything destructive.
+
+| | |
 | --- | --- |
-| ![Home screen showing this month's total and a list of expenses](docs/screenshots/home.png) | ![Stats screen showing spending by category](docs/screenshots/stats.png) |
-
-| New expense | Options |
-| --- | --- |
-| ![New expense form with amount, description, and category picker](docs/screenshots/add_expense.png) | ![Options sheet with quick actions and settings](docs/screenshots/options.png) |
+| **Thick black borders, hard shadows, zero rounded corners** | Neo-brutalism, applied consistently through one theme file |
+| **Add, edit, delete, categorize** | Eight categories, dated entries, optional notes |
+| **Today / Week / Month / All** | Filter the total without refetching — the bloc holds the full list and derives each view |
+| **Category breakdown** | Bar chart plus percentage rows for the current calendar month |
+| **Monthly budget** | Set during onboarding, editable from the options sheet |
+| **PIN lock** | Gates edit, delete, rename, budget changes, and clear-all |
+| **Swipe to delete** | With a confirm dialog *and* the PIN check before the row leaves |
+| **Four-step onboarding** | Welcome → name → budget → categories, restartable any time |
 
 <details>
-<summary>Drawer and onboarding</summary>
+<summary><b>More screenshots</b> — drawer, options sheet, onboarding</summary>
 
-| Drawer | Onboarding |
-| --- | --- |
-| ![Navigation drawer showing the user's name and monthly budget](docs/screenshots/drawer.png) | ![First onboarding page: "Track your money"](docs/screenshots/onboarding.png) |
+<br />
+
+<div align="center">
+<img src="docs/screenshots/drawer.png" width="250" alt="Navigation drawer showing the user's name and monthly budget" />
+<img src="docs/screenshots/options.png" width="250" alt="Options sheet with quick actions and settings" />
+<img src="docs/screenshots/onboarding.png" width="250" alt="First onboarding page: Track your money" />
+</div>
 
 </details>
 
-## Features
+---
 
-- **Expense tracking** — add, edit, and delete expenses with an amount, description, category, date,
-  and optional note.
-- **Time filters** — view totals for today, the last 7 days, the current month, or all time.
-- **Stats** — this month's spending broken down by category, with bar chart and percentage breakdown.
-- **Monthly budget** — set a budget during onboarding, edit it later from the options sheet.
-- **PIN lock** — an optional PIN gates editing, deleting, changing your name or budget, and clearing
-  all data.
-- **Onboarding** — a four-step first-run flow (welcome, name, budget, categories) that can be
-  restarted from the options sheet.
-
-## Getting started
-
-Requires the Flutter SDK (Dart SDK `^3.13.3`).
+## Quick start
 
 ```bash
+git clone https://github.com/siraajul/ledger.git
+cd ledger
 flutter pub get
-flutter run            # add -d <device_id> to pick a target
+flutter run          # -d <device_id> to pick a target; flutter devices to list them
 ```
 
-`flutter devices` lists connected emulators, simulators, and browsers.
+Requires the Flutter SDK (Dart `^3.13.3`). Package name `ledger`, application id
+`com.example.ledger`.
 
-The Dart package is `ledger`; the application id / bundle id is `com.example.ledger`.
+---
 
 ## Architecture
 
-State is managed with **BLoC** (`flutter_bloc`). Two blocs are provided above `MaterialApp` in
-`lib/app.dart`, so every route and dialog can reach them:
+State is **BLoC** end to end — events in, immutable state out. Two blocs are provided above
+`MaterialApp`, so every route, dialog, and modal sheet can reach them without prop-drilling.
 
-### `ExpenseBloc`
+```mermaid
+flowchart LR
+    UI["UI<br/>Home · Stats · Sheets"] -- "events" --> EB["ExpenseBloc"]
+    UI -- "events" --> SB["SettingsBloc"]
+    EB -- "read / write" --> DB[("SQLite<br/>expenses")]
+    SB -- "read / write" --> SP[("SharedPreferences<br/>name · budget · flag")]
+    EB -- "ExpenseState" --> UI
+    SB -- "SettingsState" --> UI
+```
 
-Owns every expense and the active time filter.
+### ExpenseBloc
 
-| Event | Effect |
+| Event | What happens |
 | --- | --- |
-| `LoadExpenses` | Reads the full list from SQLite. |
-| `FilterChanged` | Switches the active `TimeFilter`. |
-| `ExpenseAdded` / `ExpenseUpdated` / `ExpenseDeleted` | Writes through to SQLite, then re-reads. |
-| `AllExpensesCleared` | Deletes every row, then re-reads. |
+| `LoadExpenses` | Reads every row from SQLite |
+| `FilterChanged(TimeFilter)` | Swaps the active filter — no database hit |
+| `ExpenseAdded` / `ExpenseUpdated` / `ExpenseDeleted` | Writes through, then re-reads |
+| `AllExpensesCleared` | Truncates the table, then re-reads |
 
-`ExpenseState` holds the *complete* list (`all`) plus the active filter. The views it feeds are
-derived getters — `filtered` and `total` respect the user's filter, while `thisMonth` and
-`monthlyCategoryTotals` always use the calendar month. That lets Home and Stats read different
-slices of one source of truth, and it means every write re-emits state for both screens at once.
+`ExpenseState` keeps the **complete** list plus the active filter. Everything the screens render is
+a derived getter:
 
-### `SettingsBloc`
+```dart
+state.filtered                // respects the user's Today/Week/Month/All choice  → Home
+state.total                   // sum of the above                                 → Home
+state.thisMonth               // always the calendar month, ignores the filter    → Stats
+state.monthlyCategoryTotals   // category → amount, this month                    → Stats
+```
 
-Owns the three `SharedPreferences` keys — `user_name`, `monthly_budget`, and
-`onboarding_complete` — via `UserNameChanged`, `BudgetChanged`, `OnboardingCompleted`, and
-`OnboardingReset`. No widget reads `SharedPreferences` for these values directly, so a change in the
-options sheet updates the drawer and the home header immediately.
+One source of truth, two different views of it. A write re-emits state and **both** tabs update —
+no manual refresh, no `GlobalKey` reaching into another screen's state.
 
-`AuthCheck` in `lib/app.dart` watches `SettingsState.onboardingComplete` and swaps between
-`OnboardingScreen` and `MainShell` — completing or resetting onboarding is a state change, not a
-navigation stack rewrite.
+### SettingsBloc
+
+Owns the three `SharedPreferences` keys — `user_name`, `monthly_budget`, `onboarding_complete` —
+behind `UserNameChanged`, `BudgetChanged`, `OnboardingCompleted`, and `OnboardingReset`. No widget
+reads those keys directly, so editing the budget in the options sheet updates the drawer and the
+home header the same frame.
+
+`AuthCheck` simply watches `onboardingComplete` and swaps between `OnboardingScreen` and
+`MainShell`. Finishing or restarting onboarding is a state change, not a navigation-stack rewrite.
 
 ### Persistence
 
-- **SQLite** (`sqflite`) for expenses — schema and queries live in
-  `lib/database/database_helper.dart`, a singleton the blocs call directly.
-- **SharedPreferences** for settings and the PIN.
+| Data | Where | Accessed by |
+| --- | --- | --- |
+| Expenses | SQLite via `sqflite` (`lib/database/database_helper.dart`) | `ExpenseBloc` only |
+| Name, budget, onboarding flag | `SharedPreferences` | `SettingsBloc` only |
+| PIN | `SharedPreferences` | `PinDialog` |
+
+---
 
 ## Project layout
 
 ```
 lib/
-├── main.dart                 # entry point only; re-exports app/theme for convenience
-├── app.dart                  # MultiBlocProvider, MaterialApp, AuthCheck
-├── theme.dart                # neo-brutalist colors, shadows, ThemeData
+├── main.dart                 # entry point only — runApp + system chrome
+├── app.dart                  # MultiBlocProvider → MaterialApp → AuthCheck
+├── theme.dart                # the entire neo-brutalist palette, shadows, ThemeData
 ├── bloc/
-│   ├── expense/              # event / state / bloc
-│   └── settings/             # event / state / bloc
-├── models/expense.dart       # Expense model + the category list
+│   ├── expense/              # expense_event · expense_state · expense_bloc
+│   └── settings/             # settings_event · settings_state · settings_bloc
+├── models/expense.dart       # Expense + the eight categories
 ├── database/
-│   └── database_helper.dart  # sqflite schema and queries
+│   └── database_helper.dart  # schema and queries
 ├── screens/
-│   ├── main_shell.dart       # scaffold: drawer, tabs, FAB, bottom nav
-│   ├── home_screen.dart      # expense list, totals, time filters
+│   ├── main_shell.dart       # drawer · tabs · FAB · bottom nav
+│   ├── home_screen.dart      # list, totals, time filters
 │   ├── stats_screen.dart     # category breakdown
 │   ├── add_expense_screen.dart
-│   └── onboarding/           # welcome, name, budget, categories, tutorial
+│   └── onboarding/           # welcome · name · budget · categories · tutorial
 └── widgets/                  # drawer, options sheet, PIN dialog, cards, animations
 ```
+
+Every screen and widget is a `BlocBuilder` consumer — none of them touch SQLite or
+`SharedPreferences` directly.
+
+---
 
 ## Testing
 
 ```bash
-flutter test                                  # unit + widget tests
-flutter test integration_test                 # needs a connected device
+flutter test                    # unit + widget
+flutter test integration_test   # needs a connected device
 flutter analyze
 ```
 
-`test/expense_state_test.dart` covers the filtering and totals logic in `ExpenseState` — the part
-most likely to break silently, since it decides what every screen displays.
+`test/expense_state_test.dart` pins down the filtering and totals logic — the part that decides what
+every screen displays, and the part most likely to break without anyone noticing.
+`TEST_PLAN.md` holds the manual edge-case checklist covering onboarding, PIN, and the destructive
+flows.
 
-## Notes
+---
 
-- The app is offline-only. Nothing is uploaded, and there is no backup — clearing app data or
-  using **CLEAR ALL DATA** is irreversible.
-- The PIN is a convenience lock stored in plain `SharedPreferences`. It keeps casual hands out of
-  your expenses; it is not encryption and does not protect the SQLite file itself.
+## Privacy
+
+Nothing leaves the device. There is no backend, no analytics, no crash reporting, and the app
+requests no network permission.
+
+Two things worth knowing:
+
+- **There is no backup.** Uninstalling, clearing app data, or tapping **CLEAR ALL DATA** is
+  irreversible.
+- **The PIN is a convenience lock**, stored in plain `SharedPreferences`. It keeps casual hands out
+  of your expenses on an unlocked phone. It is not encryption, and it does not protect the SQLite
+  file from anyone with real access to the device.
+
+---
+
+<div align="center">
+
+**LEDGER v1.0** · Built with Flutter
+
+</div>

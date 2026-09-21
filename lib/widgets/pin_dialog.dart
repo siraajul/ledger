@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../theme.dart';
 
 class PinDialog extends StatefulWidget {
@@ -15,7 +16,10 @@ class PinDialog extends StatefulWidget {
     required this.onConfirmed,
   });
 
-  static Future<bool> verify(BuildContext context, {String action = 'PERFORM THIS ACTION'}) async {
+  static Future<bool> verify(
+    BuildContext context, {
+    String action = 'PERFORM THIS ACTION',
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final savedPin = prefs.getString('pin_code');
 
@@ -83,53 +87,59 @@ class _PinDialogState extends State<PinDialog> {
         widget.title,
         style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: kBg,
-              border: Border.fromBorderSide(BorderSide(color: kBlack, width: 2)),
-            ),
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 12,
+      // Scrollable: the soft keyboard shrinks the dialog, and the fields plus
+      // the error line must not overflow what's left.
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                color: kBg,
+                border: Border.fromBorderSide(
+                  BorderSide(color: kBlack, width: 2),
+                ),
               ),
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                counterText: '',
-                hintText: '• • • •',
-                hintStyle: TextStyle(
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                style: const TextStyle(
                   fontSize: 28,
-                  color: Colors.grey[300],
+                  fontWeight: FontWeight.w900,
                   letterSpacing: 12,
                 ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(16),
-              ),
-              onSubmitted: (_) => _confirm(),
-            ),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: kPink,
-                letterSpacing: 1,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: '• • • •',
+                  hintStyle: TextStyle(
+                    fontSize: 28,
+                    color: Colors.grey[300],
+                    letterSpacing: 12,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+                onSubmitted: (_) => _confirm(),
               ),
             ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: kPink,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
       actions: [
         _PinDialogButton(
@@ -226,83 +236,89 @@ class _SetPinDialogState extends State<SetPinDialog> {
         _hasExistingPin ? 'CHANGE PIN' : 'SET PIN',
         style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: kBg,
-              border: Border.fromBorderSide(BorderSide(color: kBlack, width: 2)),
-            ),
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 10,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                color: kBg,
+                border: Border.fromBorderSide(
+                  BorderSide(color: kBlack, width: 2),
+                ),
               ),
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                counterText: '',
-                hintText: '• • • •',
-                hintStyle: TextStyle(
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                style: const TextStyle(
                   fontSize: 24,
-                  color: Colors.grey[300],
+                  fontWeight: FontWeight.w900,
                   letterSpacing: 10,
                 ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(14),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            decoration: const BoxDecoration(
-              color: kBg,
-              border: Border.fromBorderSide(BorderSide(color: kBlack, width: 2)),
-            ),
-            child: TextField(
-              controller: _confirmController,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 10,
-              ),
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                counterText: '',
-                hintText: 'CONFIRM',
-                hintStyle: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[300],
-                  letterSpacing: 4,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: '• • • •',
+                  hintStyle: TextStyle(
+                    fontSize: 24,
+                    color: Colors.grey[300],
+                    letterSpacing: 10,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(14),
                 ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(14),
-              ),
-              onSubmitted: (_) => _savePin(),
-            ),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: kPink,
-                letterSpacing: 1,
               ),
             ),
+            const SizedBox(height: 10),
+            Container(
+              decoration: const BoxDecoration(
+                color: kBg,
+                border: Border.fromBorderSide(
+                  BorderSide(color: kBlack, width: 2),
+                ),
+              ),
+              child: TextField(
+                controller: _confirmController,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 10,
+                ),
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: 'CONFIRM',
+                  hintStyle: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[300],
+                    letterSpacing: 4,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(14),
+                ),
+                onSubmitted: (_) => _savePin(),
+              ),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: kPink,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
       actions: [
         if (_hasExistingPin)
@@ -316,11 +332,7 @@ class _SetPinDialogState extends State<SetPinDialog> {
           color: kWhite,
           onTap: () => Navigator.pop(context),
         ),
-        _PinDialogButton(
-          label: 'SAVE',
-          color: kGreen,
-          onTap: _savePin,
-        ),
+        _PinDialogButton(label: 'SAVE', color: kGreen, onTap: _savePin),
       ],
     );
   }
@@ -365,6 +377,9 @@ class _PinDialogButtonState extends State<_PinDialogButton> {
         ),
         child: Text(
           widget.label,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w800,

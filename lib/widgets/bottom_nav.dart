@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../theme.dart';
 
 class AnimatedBottomNav extends StatelessWidget {
@@ -34,27 +35,28 @@ class AnimatedBottomNav extends StatelessWidget {
                 isSelected: currentIndex == -1,
                 onTap: onMenuTap,
               ),
-              const SizedBox(width: 24),
-              _NavItem(
-                icon: Icons.home_rounded,
-                label: 'HOME',
-                isSelected: currentIndex == 0,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onTap(0);
-                },
+              Flexible(
+                child: _NavItem(
+                  icon: Icons.home_rounded,
+                  label: 'HOME',
+                  isSelected: currentIndex == 0,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onTap(0);
+                  },
+                ),
               ),
-              const SizedBox(width: 24),
-              _NavItem(
-                icon: Icons.bar_chart_rounded,
-                label: 'STATS',
-                isSelected: currentIndex == 1,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onTap(1);
-                },
+              Flexible(
+                child: _NavItem(
+                  icon: Icons.bar_chart_rounded,
+                  label: 'STATS',
+                  isSelected: currentIndex == 1,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onTap(1);
+                  },
+                ),
               ),
-              const SizedBox(width: 24),
               _NavIconButton(
                 icon: Icons.tune,
                 isSelected: false,
@@ -96,9 +98,10 @@ class _NavIconButtonState extends State<_NavIconButton>
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.85,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeOut));
   }
 
   @override
@@ -132,11 +135,7 @@ class _NavIconButtonState extends State<_NavIconButton>
             color: _isPressed ? kBg : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            widget.icon,
-            size: 24,
-            color: kBlack,
-          ),
+          child: Icon(widget.icon, size: 24, color: kBlack),
         ),
       ),
     );
@@ -173,9 +172,10 @@ class _NavItemState extends State<_NavItem>
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.9,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeOut));
   }
 
   @override
@@ -209,11 +209,10 @@ class _NavItemState extends State<_NavItem>
               ? const BoxDecoration(
                   color: kBlack,
                   border: Border.fromBorderSide(
-                      BorderSide(color: kBlack, width: 2)),
+                    BorderSide(color: kBlack, width: 2),
+                  ),
                 )
-              : BoxDecoration(
-                  color: _isPressed ? kBg : Colors.transparent,
-                ),
+              : BoxDecoration(color: _isPressed ? kBg : Colors.transparent),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -225,6 +224,9 @@ class _NavItemState extends State<_NavItem>
               const SizedBox(height: 4),
               Text(
                 widget.label,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w800,

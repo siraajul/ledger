@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+
 import '../bloc/expense/expense_bloc.dart';
 import '../bloc/expense/expense_event.dart';
 import '../bloc/expense/expense_state.dart';
@@ -9,10 +10,12 @@ import '../bloc/settings/settings_bloc.dart';
 import '../bloc/settings/settings_state.dart';
 import '../models/expense.dart';
 import 'add_expense_screen.dart';
+import '../widgets/brutal_widgets.dart';
 import '../widgets/expense_card.dart';
 import '../widgets/animations.dart';
 import '../widgets/pin_dialog.dart';
 import '../theme.dart';
+import '../widgets/budget_bar.dart';
 
 class HomeScreen extends StatelessWidget {
   final VoidCallback? onMenuTap;
@@ -59,12 +62,15 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: const BoxDecoration(
                   color: kBlue,
                   border: Border.fromBorderSide(
-                      BorderSide(color: kBlack, width: 2)),
+                    BorderSide(color: kBlack, width: 2),
+                  ),
                 ),
                 child: Text(
                   DateFormat('MMM d, yyyy').format(now).toUpperCase(),
@@ -97,7 +103,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-Widget _buildSummary(
+  Widget _buildSummary(
     BuildContext context,
     TimeFilter filter,
     double total,
@@ -121,8 +127,9 @@ Widget _buildSummary(
             padding: const EdgeInsets.all(24),
             decoration: const BoxDecoration(
               color: kYellow,
-              border:
-                  Border.fromBorderSide(BorderSide(color: kBlack, width: 3)),
+              border: Border.fromBorderSide(
+                BorderSide(color: kBlack, width: 3),
+              ),
               boxShadow: [kCardShadow],
             ),
             child: Column(
@@ -139,7 +146,7 @@ Widget _buildSummary(
                 const SizedBox(height: 8),
                 AnimatedCounter(
                   value: total,
-                  prefix: '\$',
+                  prefix: kCurrency,
                   style: const TextStyle(
                     fontSize: 44,
                     fontWeight: FontWeight.w900,
@@ -150,12 +157,15 @@ Widget _buildSummary(
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: const BoxDecoration(
                     color: kWhite,
                     border: Border.fromBorderSide(
-                        BorderSide(color: kBlack, width: 2)),
+                      BorderSide(color: kBlack, width: 2),
+                    ),
                   ),
                   child: Text(
                     '$count TRANSACTIONS',
@@ -168,7 +178,7 @@ Widget _buildSummary(
                 ),
                 if (showBudget) ...[
                   const SizedBox(height: 16),
-                  _BudgetBar(
+                  BudgetBar(
                     spent: spent,
                     budget: budget,
                     remaining: remaining,
@@ -209,7 +219,7 @@ Widget _buildSummary(
                       boxShadow: isSelected
                           ? []
                           : const [
-                              BoxShadow(offset: Offset(2, 2), color: kBlack)
+                              BoxShadow(offset: Offset(2, 2), color: kBlack),
                             ],
                     ),
                     child: Center(
@@ -251,8 +261,11 @@ Widget _buildSummary(
                       decoration: const BoxDecoration(
                         color: kWhite,
                         border: Border.fromBorderSide(
-                            BorderSide(color: kBlack, width: 3)),
-                        boxShadow: [BoxShadow(offset: Offset(3, 3), color: kBlack)],
+                          BorderSide(color: kBlack, width: 3),
+                        ),
+                        boxShadow: [
+                          BoxShadow(offset: Offset(3, 3), color: kBlack),
+                        ],
                       ),
                       child: const Center(
                         child: Text('📦', style: TextStyle(fontSize: 36)),
@@ -284,19 +297,22 @@ Widget _buildSummary(
                       HapticFeedback.mediumImpact();
                       Navigator.push(
                         context,
-                        SlidePageTransition(
-                          page: const AddExpenseScreen(),
-                        ),
+                        SlidePageTransition(page: const AddExpenseScreen()),
                       );
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       decoration: const BoxDecoration(
                         color: kYellow,
                         border: Border.fromBorderSide(
-                            BorderSide(color: kBlack, width: 2)),
-                        boxShadow: [BoxShadow(offset: Offset(2, 2), color: kBlack)],
+                          BorderSide(color: kBlack, width: 2),
+                        ),
+                        boxShadow: [
+                          BoxShadow(offset: Offset(2, 2), color: kBlack),
+                        ],
                       ),
                       child: const Text(
                         'ADD FIRST EXPENSE',
@@ -328,64 +344,69 @@ Widget _buildSummary(
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final dateKey = sortedKeys[index];
-            final dayExpenses = grouped[dateKey]!;
-            final dayTotal =
-                dayExpenses.fold(0.0, (sum, e) => sum + e.amount);
-            final date = DateTime.parse(dateKey);
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final dateKey = sortedKeys[index];
+          final dayExpenses = grouped[dateKey]!;
+          final dayTotal = dayExpenses.fold(0.0, (sum, e) => sum + e.amount);
+          final date = DateTime.parse(dateKey);
 
-            return StaggeredAnimation(
-              index: index + 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: const BoxDecoration(
-                            color: kPink,
-                            border: Border.fromBorderSide(
-                                BorderSide(color: kBlack, width: 2)),
-                          ),
-                          child: Text(
-                            _formatDateHeader(date).toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1,
-                            ),
+          return StaggeredAnimation(
+            index: index + 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: kPink,
+                          border: Border.fromBorderSide(
+                            BorderSide(color: kBlack, width: 2),
                           ),
                         ),
-                        Text(
-                          '-\$${dayTotal.toStringAsFixed(2)}',
+                        child: Text(
+                          _formatDateHeader(date).toUpperCase(),
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: kBlack,
+                            letterSpacing: 1,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      Text(
+                        '-$kCurrency${dayTotal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: kBlack,
+                        ),
+                      ),
+                    ],
                   ),
-                  ...dayExpenses.map((expense) => SwipeToDelete(
+                ),
+                ...dayExpenses.map(
+                  (expense) => SwipeToDelete(
                     key: ValueKey(expense.id),
                     beforeDismiss: () =>
                         PinDialog.verify(context, action: 'DELETE EXPENSE'),
-                    onDismissed: () => context
-                        .read<ExpenseBloc>()
-                        .add(ExpenseDeleted(expense.id)),
+                    onDismissed: () => context.read<ExpenseBloc>().add(
+                      ExpenseDeleted(expense.id),
+                    ),
                     child: ExpenseCard(
                       expense: expense,
                       onTap: () async {
                         HapticFeedback.mediumImpact();
-                        final allowed = await PinDialog.verify(context, action: 'EDIT EXPENSE');
+                        final allowed = await PinDialog.verify(
+                          context,
+                          action: 'EDIT EXPENSE',
+                        );
                         if (!allowed || !context.mounted) return;
                         Navigator.push(
                           context,
@@ -401,18 +422,17 @@ Widget _buildSummary(
                           action: 'DELETE EXPENSE',
                         );
                         if (!allowed || !context.mounted) return;
-                        context
-                            .read<ExpenseBloc>()
-                            .add(ExpenseDeleted(expense.id));
+                        context.read<ExpenseBloc>().add(
+                          ExpenseDeleted(expense.id),
+                        );
                       },
                     ),
-                  )),
-                ],
-              ),
-            );
-          },
-          childCount: sortedKeys.length,
-        ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }, childCount: sortedKeys.length),
       ),
     );
   }
@@ -458,201 +478,16 @@ Widget _buildSummary(
 /// Mirrors the swipe-delete flow exactly: confirm dialog, then PIN
 /// gate, then the caller proceeds. Long-press previously skipped the
 /// confirm step, giving accidental deletions fewer checks.
-Future<bool> _confirmDelete(BuildContext context, {required String action}) async {
-    final navigator = Navigator.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: kWhite,
-        shape: RoundedRectangleBorder(
-          side: const BorderSide(color: kBlack, width: 3),
-          borderRadius: BorderRadius.zero,
-        ),
-        title: const Text(
-          'DELETE?',
-          style: TextStyle(fontWeight: FontWeight.w900),
-        ),
-        actions: [
-          _DeleteConfirmButton(
-            label: 'CANCEL',
-            color: kWhite,
-            onTap: () => navigator.pop(false),
-          ),
-          _DeleteConfirmButton(
-            label: 'DELETE',
-            color: kPink,
-            onTap: () => navigator.pop(true),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return false;
-    if (!context.mounted) return false;
-    return PinDialog.verify(context, action: action);
-  }
-
-/// Budget progress strip shown under the summary card when the monthly
-/// budget is set and the active filter is MONTH. Drives the only
-/// feedback a user gets for the budget feature: how much is left, or
-/// how far over they've drifted.
-class _BudgetBar extends StatefulWidget {
-  final double spent;
-  final double budget;
-  final double remaining;
-  final bool overBudget;
-
-  const _BudgetBar({
-    required this.spent,
-    required this.budget,
-    required this.remaining,
-    required this.overBudget,
-  });
-
-  @override
-  State<_BudgetBar> createState() => _BudgetBarState();
-}
-
-class _BudgetBarState extends State<_BudgetBar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
-  }
-
-  @override
-  void didUpdateWidget(_BudgetBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.spent != widget.spent) {
-      _controller.reset();
-      _controller.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ratio = (widget.spent / widget.budget).clamp(0.0, 1.0);
-    final barColor = widget.overBudget ? kPink : kGreen;
-    final label = widget.overBudget
-        ? 'OVER BY \$${(-widget.remaining).toStringAsFixed(0)}'
-        : '\$${widget.remaining.toStringAsFixed(0)} LEFT';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'BUDGET',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1,
-                color: widget.overBudget ? kPink : kBlack,
-              ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: widget.overBudget ? kPink : kGreen,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            return Container(
-              height: 14,
-              width: constraints.maxWidth,
-              decoration: const BoxDecoration(
-                color: kWhite,
-                border: Border.fromBorderSide(
-                    BorderSide(color: kBlack, width: 2)),
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.0, end: 1.0).animate(
-                    CurvedAnimation(
-                        parent: _controller, curve: Curves.easeOutCubic),
-                  ),
-                  child: Container(
-                    height: 14,
-                    width: constraints.maxWidth * ratio,
-                    color: barColor,
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-/// Local copy of the brutal confirm button so the long-press delete
-/// dialog doesn't reach into add_expense_screen.dart's private type.
-class _DeleteConfirmButton extends StatefulWidget {
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _DeleteConfirmButton({
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  State<_DeleteConfirmButton> createState() => _DeleteConfirmButtonState();
-}
-
-class _DeleteConfirmButtonState extends State<_DeleteConfirmButton> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: _isPressed ? widget.color.withValues(alpha: 0.8) : widget.color,
-          border: Border.all(color: kBlack, width: 2),
-          boxShadow: _isPressed
-              ? []
-              : const [BoxShadow(offset: Offset(2, 2), color: kBlack)],
-        ),
-        child: Text(
-          widget.label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: kBlack,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ),
-    );
-  }
+Future<bool> _confirmDelete(
+  BuildContext context, {
+  required String action,
+}) async {
+  final confirmed = await showBrutalConfirm(
+    context,
+    title: 'DELETE?',
+    confirmLabel: 'DELETE',
+    color: kPink,
+  );
+  if (!confirmed || !context.mounted) return false;
+  return PinDialog.verify(context, action: action);
 }

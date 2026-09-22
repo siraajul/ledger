@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../models/expense.dart';
 import '../theme.dart';
 
@@ -88,7 +89,8 @@ class _ExpenseCardState extends State<ExpenseCard>
               decoration: BoxDecoration(
                 color: _isPressed ? kGreen : kYellow,
                 border: const Border.fromBorderSide(
-                    BorderSide(color: kBlack, width: 2)),
+                  BorderSide(color: kBlack, width: 2),
+                ),
               ),
               child: Center(
                 child: Text(
@@ -117,10 +119,7 @@ class _ExpenseCardState extends State<ExpenseCard>
                     const SizedBox(height: 2),
                     Text(
                       widget.expense.note!,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -137,7 +136,7 @@ class _ExpenseCardState extends State<ExpenseCard>
                 color: _isPressed ? kPink : kBlack,
               ),
               child: Text(
-                '-\$${widget.expense.amount.toStringAsFixed(2)}',
+                '-$kCurrency${widget.expense.amount.toStringAsFixed(2)}',
               ),
             ),
           ],

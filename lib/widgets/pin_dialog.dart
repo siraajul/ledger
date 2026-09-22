@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme.dart';
+import 'brutal_widgets.dart';
 
 class PinDialog extends StatefulWidget {
   final String title;
@@ -80,15 +81,9 @@ class _PinDialogState extends State<PinDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: kWhite,
-      shape: const RoundedRectangleBorder(
-        side: BorderSide(color: kBlack, width: 3),
-      ),
-      title: Text(
-        widget.title,
-        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-      ),
+    return brutalDialog(
+      title: widget.title,
+      titleStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
       // Scrollable: the soft keyboard shrinks the dialog, and the fields plus
       // the error line must not overflow what's left.
       content: SingleChildScrollView(
@@ -144,12 +139,14 @@ class _PinDialogState extends State<PinDialog> {
         ),
       ),
       actions: [
-        _PinDialogButton(
+        BrutalDialogButton(
+          fillOnPress: true,
           label: 'CANCEL',
           color: kWhite,
           onTap: () => Navigator.pop(context),
         ),
-        _PinDialogButton(
+        BrutalDialogButton(
+          fillOnPress: true,
           label: widget.confirmLabel,
           color: kGreen,
           onTap: _confirm,
@@ -229,15 +226,9 @@ class _SetPinDialogState extends State<SetPinDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: kWhite,
-      shape: const RoundedRectangleBorder(
-        side: BorderSide(color: kBlack, width: 3),
-      ),
-      title: Text(
-        _hasExistingPin ? 'CHANGE PIN' : 'SET PIN',
-        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-      ),
+    return brutalDialog(
+      title: _hasExistingPin ? 'CHANGE PIN' : 'SET PIN',
+      titleStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -324,72 +315,25 @@ class _SetPinDialogState extends State<SetPinDialog> {
       ),
       actions: [
         if (_hasExistingPin)
-          _PinDialogButton(
+          BrutalDialogButton(
+            fillOnPress: true,
             label: 'REMOVE PIN',
             color: kPink,
             onTap: _removePin,
           ),
-        _PinDialogButton(
+        BrutalDialogButton(
+          fillOnPress: true,
           label: 'CANCEL',
           color: kWhite,
           onTap: () => Navigator.pop(context),
         ),
-        _PinDialogButton(label: 'SAVE', color: kGreen, onTap: _savePin),
+        BrutalDialogButton(
+          fillOnPress: true,
+          label: 'SAVE',
+          color: kGreen,
+          onTap: _savePin,
+        ),
       ],
-    );
-  }
-}
-
-class _PinDialogButton extends StatefulWidget {
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _PinDialogButton({
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  State<_PinDialogButton> createState() => _PinDialogButtonState();
-}
-
-class _PinDialogButtonState extends State<_PinDialogButton> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: _isPressed ? widget.color : kWhite,
-          border: Border.all(color: kBlack, width: 2),
-          boxShadow: _isPressed
-              ? []
-              : const [BoxShadow(offset: Offset(2, 2), color: kBlack)],
-        ),
-        child: Text(
-          widget.label,
-          maxLines: 1,
-          softWrap: false,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
-            color: _isPressed ? kWhite : kBlack,
-          ),
-        ),
-      ),
     );
   }
 }

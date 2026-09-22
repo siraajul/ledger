@@ -11,16 +11,13 @@ const kGreen = Color(0xFF00E676);
 const kOrange = Color(0xFFFF9100);
 const kPurple = Color(0xFFBB86FC);
 
-const kBorder = BorderRadius.zero;
-const kShadow = BoxShadow(
-  offset: Offset(4, 4),
-  color: kBlack,
-);
+// Bengali taka sign (U+09F3); rendered by the platform's Bengali fallback font.
+const kCurrency = '৳';
 
-const kCardShadow = BoxShadow(
-  offset: Offset(5, 5),
-  color: kBlack,
-);
+const kBorder = BorderRadius.zero;
+const kShadow = BoxShadow(offset: Offset(4, 4), color: kBlack);
+
+const kCardShadow = BoxShadow(offset: Offset(5, 5), color: kBlack);
 
 final kAppTheme = ThemeData(
   scaffoldBackgroundColor: kBg,

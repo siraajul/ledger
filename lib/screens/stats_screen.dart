@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+
 import '../bloc/expense/expense_bloc.dart';
 import '../bloc/expense/expense_state.dart';
 import '../models/expense.dart';
@@ -52,7 +53,8 @@ class StatsScreen extends StatelessWidget {
             decoration: const BoxDecoration(
               color: kPink,
               border: Border.fromBorderSide(
-                  BorderSide(color: kBlack, width: 2)),
+                BorderSide(color: kBlack, width: 2),
+              ),
             ),
             child: Text(
               DateFormat('MMMM yyyy').format(DateTime.now()).toUpperCase(),
@@ -123,7 +125,10 @@ class StatsScreen extends StatelessWidget {
               final category = categories.firstWhere(
                 (c) => c.name == entry.key,
                 orElse: () => const ExpenseCategory(
-                    name: 'Other', icon: '📦', color: 0xFFA8D8EA),
+                  name: 'Other',
+                  icon: '📦',
+                  color: 0xFFA8D8EA,
+                ),
               );
               final ratio = entry.value / maxValue;
 
@@ -145,11 +150,14 @@ class StatsScreen extends StatelessWidget {
                                 decoration: const BoxDecoration(
                                   color: kYellow,
                                   border: Border.fromBorderSide(
-                                      BorderSide(color: kBlack, width: 2)),
+                                    BorderSide(color: kBlack, width: 2),
+                                  ),
                                 ),
                                 child: Center(
-                                  child: Text(category.icon,
-                                      style: const TextStyle(fontSize: 14)),
+                                  child: Text(
+                                    category.icon,
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -164,7 +172,7 @@ class StatsScreen extends StatelessWidget {
                             ],
                           ),
                           Text(
-                            '-\$${entry.value.toStringAsFixed(2)}',
+                            '-$kCurrency${entry.value.toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
@@ -194,8 +202,10 @@ class StatsScreen extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final total =
-        categoryTotals.values.fold(0.0, (sum, amount) => sum + amount);
+    final total = categoryTotals.values.fold(
+      0.0,
+      (sum, amount) => sum + amount,
+    );
     final sortedEntries = categoryTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
@@ -220,10 +230,12 @@ class StatsScreen extends StatelessWidget {
               final category = categories.firstWhere(
                 (c) => c.name == entry.key,
                 orElse: () => const ExpenseCategory(
-                    name: 'Other', icon: '📦', color: 0xFFA8D8EA),
+                  name: 'Other',
+                  icon: '📦',
+                  color: 0xFFA8D8EA,
+                ),
               );
-              final percentage =
-                  (entry.value / total * 100).toStringAsFixed(0);
+              final percentage = (entry.value / total * 100).toStringAsFixed(0);
 
               return StaggeredAnimation(
                 index: index + sortedEntries.length + 4,
@@ -281,8 +293,7 @@ class _CategoryRowState extends State<_CategoryRow> {
         transform: Matrix4.translationValues(0, _isPressed ? 2 : 0, 0),
         decoration: const BoxDecoration(
           color: kBg,
-          border:
-              Border.fromBorderSide(BorderSide(color: kBlack, width: 2)),
+          border: Border.fromBorderSide(BorderSide(color: kBlack, width: 2)),
         ),
         child: Row(
           children: [
@@ -292,11 +303,11 @@ class _CategoryRowState extends State<_CategoryRow> {
               decoration: BoxDecoration(
                 color: widget.color,
                 border: const Border.fromBorderSide(
-                    BorderSide(color: kBlack, width: 2)),
+                  BorderSide(color: kBlack, width: 2),
+                ),
               ),
               child: Center(
-                child:
-                    Text(widget.icon, style: const TextStyle(fontSize: 16)),
+                child: Text(widget.icon, style: const TextStyle(fontSize: 16)),
               ),
             ),
             const SizedBox(width: 12),
@@ -310,12 +321,12 @@ class _CategoryRowState extends State<_CategoryRow> {
               ),
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: const BoxDecoration(
                 color: kWhite,
                 border: Border.fromBorderSide(
-                    BorderSide(color: kBlack, width: 2)),
+                  BorderSide(color: kBlack, width: 2),
+                ),
               ),
               child: Text(
                 '${widget.percentage}%',
@@ -327,11 +338,8 @@ class _CategoryRowState extends State<_CategoryRow> {
             ),
             const SizedBox(width: 10),
             Text(
-              '-\$${widget.amount.toStringAsFixed(0)}',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-              ),
+              '-$kCurrency${widget.amount.toStringAsFixed(0)}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
             ),
           ],
         ),

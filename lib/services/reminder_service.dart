@@ -7,6 +7,7 @@ import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/expense.dart';
+import 'reminder_messages.dart';
 
 /// Per-device reminder preferences. Kept in SharedPreferences, not Firestore:
 /// each device schedules its own notifications (like the PIN).
@@ -30,10 +31,6 @@ class ReminderSettings {
         times: times ?? this.times,
       );
 }
-
-DateTime? newestExpenseDate(Iterable<Expense> expenses) => expenses.isEmpty
-    ? null
-    : expenses.map((e) => e.date).reduce((a, b) => a.isAfter(b) ? a : b);
 
 /// Check-ins to notify for, over the next [days] days.
 ///
@@ -91,7 +88,8 @@ class ReminderService {
 
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
-  DateTime? _lastExpense;
+  List<Expense> _expenses = const [];
+  double _budget = 0;
   bool _hasExpenseData = false;
 
   /// Call once at startup. Does not prompt for permission.
@@ -146,18 +144,25 @@ class ReminderService {
     return granted;
   }
 
-  /// Feed the newest expense date whenever the expense list changes.
-  Future<void> onExpensesChanged(DateTime? newest) async {
-    if (_hasExpenseData && newest == _lastExpense) return;
+  /// Feed the expense list whenever it changes; the messages quote today's
+  /// total and what's left of the budget.
+  Future<void> onExpensesChanged(List<Expense> expenses) async {
     _hasExpenseData = true;
-    _lastExpense = newest;
+    _expenses = expenses;
+    await _reschedule();
+  }
+
+  Future<void> onBudgetChanged(double budget) async {
+    if (budget == _budget) return;
+    _budget = budget;
     await _reschedule();
   }
 
   /// On sign-out: reminders belong to the account that set them up.
   Future<void> cancelAll() async {
     _hasExpenseData = false;
-    _lastExpense = null;
+    _expenses = const [];
+    _budget = 0;
     if (_ready) await _plugin.cancelAll();
   }
 
@@ -187,18 +192,41 @@ class ReminderService {
     final settings = await load();
     if (!settings.enabled) return;
 
+    final now = DateTime.now();
+    final facts = ReminderFacts.from(
+      expenses: _expenses,
+      budget: _budget,
+      now: now,
+    );
+    final daily = [...settings.times]
+      ..sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
     final times = reminderTimes(
-      lastExpense: _lastExpense,
-      now: DateTime.now(),
-      times: settings.times,
+      lastExpense: facts.lastExpense,
+      now: now,
+      times: daily,
       days: _days,
     ).take(_maxScheduled).toList();
+
     for (var i = 0; i < times.length; i++) {
+      final slot = times[i];
+      final first = daily.first;
+      final last = daily.last;
+      final position = slot.hour == last.hour && slot.minute == last.minute
+          ? CheckIn.last
+          : slot.hour == first.hour && slot.minute == first.minute
+          ? CheckIn.first
+          : CheckIn.middle;
+      final message = reminderMessage(
+        slot: slot,
+        now: now,
+        position: position,
+        facts: facts,
+      );
       await _plugin.zonedSchedule(
         id: _firstId + i,
-        title: 'LEDGER',
-        body: 'Spent anything? Nothing logged since your last check-in.',
-        scheduledDate: tz.TZDateTime.from(times[i], tz.local),
+        title: message.title,
+        body: message.body,
+        scheduledDate: tz.TZDateTime.from(slot, tz.local),
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'expense_reminders',

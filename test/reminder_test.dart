@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ledger/models/expense.dart';
 import 'package:ledger/services/reminder_service.dart';
 
 void main() {
@@ -57,12 +56,5 @@ void main() {
       reminderTimes(lastExpense: null, now: at(8), times: const []),
       isEmpty,
     );
-  });
-
-  test('newest expense date', () {
-    Expense e(DateTime d) =>
-        Expense(id: '$d', title: 't', amount: 1, category: 'Food', date: d);
-    expect(newestExpenseDate([]), isNull);
-    expect(newestExpenseDate([e(at(9)), e(at(13)), e(at(11))]), at(13));
   });
 }

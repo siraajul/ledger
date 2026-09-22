@@ -35,7 +35,7 @@ phone and tablet. The UI is loud on purpose, and a PIN sits in front of anything
 | **Today / Week / Month / All** | Filter the total without refetching — the bloc holds the full list and derives each view |
 | **Category breakdown** | Bar chart plus percentage rows for the current calendar month |
 | **Monthly budget** | Set during onboarding, editable from the options sheet |
-| **Check-in reminders** | Daily nudges at times you pick (default 10:00, 14:00, 19:00), skipped when you've just logged (per device) |
+| **Check-in reminders** | Daily nudges at times you pick (default 10:00, 14:00, 19:00), skipped when you've just logged. The wording fits the moment — morning, midday, an evening total, budget left, over budget, or a long silence |
 | **PIN lock** | Gates edit, delete, rename, budget changes, and clear-all (per device) |
 | **Swipe to delete** | With a confirm dialog *and* the PIN check before the row leaves |
 | **Thick black borders, hard shadows, zero rounded corners** | Neo-brutalism, applied consistently through one theme file |
@@ -238,6 +238,7 @@ flutter test
 | `test/expense_state_test.dart` | Filtering and totals — what every screen displays |
 | `test/widget_test.dart` | Onboarding routing, and `SettingsBloc` write coalescing / local-edit precedence against an in-memory repository |
 | `test/reminder_test.dart` | Which check-ins fire or are skipped, relative to your last log |
+| `test/reminder_messages_test.dart` | Which message each check-in gets, and that stale figures never ship |
 | `test/sync_status_test.dart` | SYNCED / SYNCING / OFFLINE badge rules |
 | `test/drawer_initials_test.dart` | Drawer initials with stray whitespace (a release-only blank drawer) |
 

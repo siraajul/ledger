@@ -51,11 +51,21 @@ class ExpenseTrackerApp extends StatelessWidget {
           ],
           // Keeps the "no expense logged" reminder in step with the data,
           // including expenses logged on other devices.
-          child: BlocListener<ExpenseBloc, ExpenseState>(
-            listenWhen: (a, b) =>
-                b.status == ExpenseStatus.loaded && a.all != b.all,
-            listener: (context, state) => ReminderService.instance
-                .onExpensesChanged(newestExpenseDate(state.all)),
+          child: MultiBlocListener(
+            listeners: [
+              BlocListener<ExpenseBloc, ExpenseState>(
+                listenWhen: (a, b) =>
+                    b.status == ExpenseStatus.loaded && a.all != b.all,
+                listener: (context, state) =>
+                    ReminderService.instance.onExpensesChanged(state.all),
+              ),
+              // The messages quote what's left of the budget.
+              BlocListener<SettingsBloc, SettingsState>(
+                listenWhen: (a, b) => a.budget != b.budget,
+                listener: (context, state) =>
+                    ReminderService.instance.onBudgetChanged(state.budget),
+              ),
+            ],
             child: app,
           ),
         );

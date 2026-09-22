@@ -1,0 +1,65 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "my_flutter_app",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "my_flutter_app (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "my_flutter_app (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "agreeable-snowboard",
+            "cwd": ".kilo/worktrees/agreeable-snowboard",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "agreeable-snowboard (profile mode)",
+            "cwd": ".kilo/worktrees/agreeable-snowboard",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "agreeable-snowboard (release mode)",
+            "cwd": ".kilo/worktrees/agreeable-snowboard",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "lush-juniper",
+            "cwd": ".kilo/worktrees/lush-juniper",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "lush-juniper (profile mode)",
+            "cwd": ".kilo/worktrees/lush-juniper",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "lush-juniper (release mode)",
+            "cwd": ".kilo/worktrees/lush-juniper",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}

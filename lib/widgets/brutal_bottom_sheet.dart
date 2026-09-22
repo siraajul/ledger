@@ -334,17 +334,17 @@ class _BrutalBottomSheetState extends State<BrutalBottomSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'No accounts. No cloud. No tracking.\nYour money, your phone, your rules.',
+              'Synced to your Google account.\nSame expenses and settings on every device.',
               style: TextStyle(fontSize: 14, height: 1.4),
             ),
             SizedBox(height: 12),
             Text(
-              'Everything lives in a local SQLite file.\nThere is no backup — losing data is permanent.',
+              'Stored in Firebase (Google Cloud), readable only\nwhen signed in as you. Works offline, syncs later.',
               style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
             ),
             SizedBox(height: 12),
             Text(
-              'The PIN is a convenience lock, not encryption.\nAnyone with device access can reach the file.',
+              'The PIN stays on this device. It is a convenience\nlock, not encryption, and does not sync.',
               style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
             ),
             SizedBox(height: 16),

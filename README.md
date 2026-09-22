@@ -98,10 +98,11 @@ dart pub global activate flutterfire_cli
 flutterfire configure --project=<your-project> --platforms=android,ios
 ```
 
-Then enable Google sign-in and deploy the rules:
+Then enable Google sign-in (Firebase console → Authentication → Sign-in method → Google) and
+deploy the rules:
 
 ```bash
-npx -y firebase-tools@latest deploy --only auth,firestore:rules --project <your-project>
+npx -y firebase-tools@latest deploy --only firestore:rules --project <your-project>
 ```
 
 Finally set `GIDClientID` / `CFBundleURLTypes` in `ios/Runner/Info.plist` from the new

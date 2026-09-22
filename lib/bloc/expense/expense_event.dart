@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+
 import '../../models/expense.dart';
 import 'expense_state.dart';
 

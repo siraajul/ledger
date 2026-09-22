@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+
 import '../models/expense.dart';
 
 class DatabaseHelper {
@@ -18,11 +19,7 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDB,
-    );
+    return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
   Future _createDB(Database db, int version) async {
@@ -59,11 +56,7 @@ class DatabaseHelper {
 
   Future<void> deleteExpense(String id) async {
     final db = await database;
-    await db.delete(
-      'expenses',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete('expenses', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<List<Expense>> getAllExpenses() async {
@@ -77,7 +70,10 @@ class DatabaseHelper {
     await db.delete('expenses');
   }
 
-  Future<List<Expense>> getExpensesByDateRange(DateTime start, DateTime end) async {
+  Future<List<Expense>> getExpensesByDateRange(
+    DateTime start,
+    DateTime end,
+  ) async {
     final db = await database;
     final result = await db.query(
       'expenses',
@@ -90,7 +86,9 @@ class DatabaseHelper {
 
   Future<double> getTotalExpenses() async {
     final db = await database;
-    final result = await db.rawQuery('SELECT SUM(amount) as total FROM expenses');
+    final result = await db.rawQuery(
+      'SELECT SUM(amount) as total FROM expenses',
+    );
     return (result.first['total'] as double?) ?? 0.0;
   }
 
@@ -101,7 +99,7 @@ class DatabaseHelper {
       FROM expenses 
       GROUP BY category
     ''');
-    
+
     Map<String, double> categoryTotals = {};
     for (var row in result) {
       categoryTotals[row['category'] as String] = (row['total'] as double);

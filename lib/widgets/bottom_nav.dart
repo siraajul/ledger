@@ -105,8 +105,8 @@ class _NavIconButtonState extends State<_NavIconButton>
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.85,
-    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeOut));
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: kEaseOut));
   }
 
   @override
@@ -172,8 +172,8 @@ class _NavItemState extends State<_NavItem>
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.9,
-    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeOut));
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: kEaseOut));
   }
 
   @override

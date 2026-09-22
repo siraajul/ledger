@@ -127,16 +127,13 @@ class _ExpenseCardState extends State<ExpenseCard>
                 ),
               ),
               const SizedBox(width: 10),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 150),
-                style: TextStyle(
-                  fontSize: _isPressed ? 17 : 15,
+              Text(
+                '-$kCurrency${widget.expense.amount.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 15,
                   fontWeight: FontWeight.w900,
                   color: kBlack,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-                child: Text(
-                  '-$kCurrency${widget.expense.amount.toStringAsFixed(2)}',
+                  fontFeatures: [FontFeature.tabularFigures()],
                 ),
               ),
             ],

@@ -49,7 +49,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _controller.animateToPage(
         page,
         duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
+        curve: kEaseOut,
       );
     }
   }

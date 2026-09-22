@@ -18,7 +18,7 @@ class AnimatedCounter extends StatelessWidget {
     this.style,
     this.prefix = '',
     this.suffix = '',
-    this.duration = const Duration(milliseconds: 800),
+    this.duration = const Duration(milliseconds: 250),
   });
 
   @override
@@ -32,7 +32,7 @@ class AnimatedCounter extends StatelessWidget {
       duration: MediaQuery.disableAnimationsOf(context)
           ? Duration.zero
           : duration,
-      curve: Curves.easeOutCubic,
+      curve: kEaseOut,
       builder: (context, val, child) {
         return Text('$prefix${val.toStringAsFixed(2)}$suffix', style: tabular);
       },
@@ -52,9 +52,9 @@ class StaggeredAnimation extends StatelessWidget {
     super.key,
     required this.index,
     required this.child,
-    this.delay = const Duration(milliseconds: 60),
-    this.duration = const Duration(milliseconds: 400),
-    this.offset = const Offset(0, 0.3),
+    this.delay = const Duration(milliseconds: 40),
+    this.duration = const Duration(milliseconds: 250),
+    this.offset = const Offset(0, 0.08),
   });
 
   @override
@@ -64,7 +64,7 @@ class StaggeredAnimation extends StatelessWidget {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
       duration: duration + (delay * index.clamp(0, 4)),
-      curve: Curves.easeOutCubic,
+      curve: kEaseOut,
       builder: (context, val, child) {
         return Opacity(
           opacity: val,
@@ -113,7 +113,7 @@ class _AnimatedBarState extends State<AnimatedBar>
     _animation = Tween<double>(
       begin: 0,
       end: widget.ratio,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    ).animate(CurvedAnimation(parent: _controller, curve: kEaseOut));
     _controller.forward();
   }
 
@@ -121,10 +121,10 @@ class _AnimatedBarState extends State<AnimatedBar>
   void didUpdateWidget(AnimatedBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.ratio != widget.ratio) {
-      _animation = Tween<double>(begin: _animation.value, end: widget.ratio)
-          .animate(
-            CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-          );
+      _animation = Tween<double>(
+        begin: _animation.value,
+        end: widget.ratio,
+      ).animate(CurvedAnimation(parent: _controller, curve: kEaseOut));
       _controller
         ..reset()
         ..forward();
@@ -139,8 +139,9 @@ class _AnimatedBarState extends State<AnimatedBar>
 
   @override
   Widget build(BuildContext context) {
+    final reduce = MediaQuery.disableAnimationsOf(context);
     return AnimatedBuilder(
-      animation: _animation,
+      animation: reduce ? kAlwaysCompleteAnimation : _animation,
       builder: (context, child) {
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -156,7 +157,9 @@ class _AnimatedBarState extends State<AnimatedBar>
                 alignment: Alignment.centerLeft,
                 child: Container(
                   height: widget.height,
-                  width: constraints.maxWidth * _animation.value,
+                  width:
+                      constraints.maxWidth *
+                      (reduce ? widget.ratio : _animation.value),
                   color: widget.color,
                 ),
               ),
@@ -254,13 +257,14 @@ class SlidePageTransition extends PageRouteBuilder {
           final tween = Tween<Offset>(
             begin: const Offset(1, 0),
             end: Offset.zero,
-          ).chain(CurveTween(curve: Curves.easeOutCubic));
+          ).chain(CurveTween(curve: kEaseOut));
 
           return SlideTransition(
             position: animation.drive(tween),
             child: child,
           );
         },
-        transitionDuration: const Duration(milliseconds: 400),
+        transitionDuration: const Duration(milliseconds: 280),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
       );
 }

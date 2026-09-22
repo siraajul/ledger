@@ -120,7 +120,7 @@ class _BrutalButtonState extends State<BrutalButton>
     _downAnimation = Tween<double>(
       begin: 0,
       end: 4,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    ).animate(CurvedAnimation(parent: _controller, curve: kEaseOut));
   }
 
   @override
@@ -221,7 +221,7 @@ class _BrutalCardState extends State<BrutalCard>
     _downAnimation = Tween<double>(
       begin: 0,
       end: 4,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    ).animate(CurvedAnimation(parent: _controller, curve: kEaseOut));
   }
 
   @override

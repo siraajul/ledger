@@ -24,34 +24,7 @@ class BudgetBar extends StatefulWidget {
   State<BudgetBar> createState() => _BudgetBarState();
 }
 
-class _BudgetBarState extends State<BudgetBar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
-  }
-
-  @override
-  void didUpdateWidget(BudgetBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.spent != widget.spent) {
-      _controller.reset();
-      _controller.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _BudgetBarState extends State<BudgetBar> {
   @override
   Widget build(BuildContext context) {
     final ratio = (widget.spent / widget.budget).clamp(0.0, 1.0);
@@ -86,37 +59,26 @@ class _BudgetBarState extends State<BudgetBar>
           ],
         ),
         const SizedBox(height: 8),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            return Container(
-              height: 14,
-              width: constraints.maxWidth,
-              decoration: const BoxDecoration(
-                color: kWhite,
-                border: Border.fromBorderSide(
-                  BorderSide(color: kBlack, width: 2),
-                ),
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: ScaleTransition(
-                  scale: MediaQuery.disableAnimationsOf(context)
-                      ? kAlwaysCompleteAnimation
-                      : Tween<double>(begin: 0.0, end: 1.0).animate(
-                          CurvedAnimation(
-                            parent: _controller,
-                            curve: Curves.easeOutCubic,
-                          ),
-                        ),
-                  child: Container(
-                    height: 14,
-                    width: constraints.maxWidth * ratio,
-                    color: barColor,
-                  ),
-                ),
-              ),
-            );
-          },
+        Container(
+          height: 14,
+          decoration: const BoxDecoration(
+            color: kWhite,
+            border: Border.fromBorderSide(BorderSide(color: kBlack, width: 2)),
+          ),
+          // Fills from the left and retargets from wherever it is,
+          // instead of regrowing from zero on every change.
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: ratio),
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 250),
+            curve: kEaseOut,
+            builder: (context, value, _) => FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: value,
+              child: ColoredBox(color: barColor),
+            ),
+          ),
         ),
       ],
     );

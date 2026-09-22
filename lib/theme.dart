@@ -19,6 +19,9 @@ const kMutedText = Color(0xFF616161);
 // Bengali taka sign (U+09F3); rendered by the platform's Bengali fallback font.
 const kCurrency = '৳';
 
+// One strong ease-out for all UI motion; Curves.easeOut is too soft.
+const kEaseOut = Cubic(0.23, 1, 0.32, 1);
+
 const kBorder = BorderRadius.zero;
 const kShadow = BoxShadow(offset: Offset(4, 4), color: kBlack);
 

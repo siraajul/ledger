@@ -220,7 +220,7 @@ class HomeScreen extends StatelessWidget {
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
-                      curve: Curves.easeOut,
+                      curve: kEaseOut,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       decoration: BoxDecoration(
                         color: isSelected ? kBlack : kWhite,

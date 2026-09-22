@@ -184,7 +184,7 @@ class StatsScreen extends StatelessWidget {
                       AnimatedBar(
                         ratio: ratio,
                         color: Color(category.color),
-                        duration: Duration(milliseconds: 600 + (index * 150)),
+                        duration: Duration(milliseconds: 250 + (index * 40)),
                       ),
                     ],
                   ),

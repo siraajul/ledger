@@ -342,10 +342,20 @@ class _BrutalBottomSheetState extends State<BrutalBottomSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'A neo brutalism expense tracker.',
-              style: TextStyle(fontSize: 14),
+              'No accounts. No cloud. No tracking.\nYour money, your phone, your rules.',
+              style: TextStyle(fontSize: 14, height: 1.4),
             ),
             SizedBox(height: 12),
+            Text(
+              'Everything lives in a local SQLite file.\nThere is no backup — losing data is permanent.',
+              style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'The PIN is a convenience lock, not encryption.\nAnyone with device access can reach the file.',
+              style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
+            ),
+            SizedBox(height: 16),
             Text(
               'Version 1.0.0',
               style: TextStyle(

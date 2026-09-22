@@ -205,6 +205,9 @@ class ReminderService {
             'Expense reminders',
             channelDescription:
                 'Check-in reminders when nothing has been logged',
+            // High: a heads-up banner rather than a silent entry in the shade.
+            importance: Importance.high,
+            priority: Priority.high,
           ),
           iOS: DarwinNotificationDetails(),
         ),

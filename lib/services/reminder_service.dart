@@ -80,6 +80,7 @@ class ReminderService {
   static const _kEnabled = 'reminder_enabled';
   static const _kTimes = 'reminder_times'; // minutes after midnight
   static const _firstId = 100;
+  static const _previewFirstId = 900;
 
   /// Upper bound of scheduled check-ins: 5 times a day over [_days] + 1 days.
   /// Well under iOS's 64 pending notifications.
@@ -164,6 +165,73 @@ class ReminderService {
     _expenses = const [];
     _budget = 0;
     if (_ready) await _plugin.cancelAll();
+  }
+
+  /// Fires one notification per message scenario, a few seconds apart, so the
+  /// wording can be checked on a real device. Uses made-up figures and doesn't
+  /// touch the real schedule.
+  Future<bool> sendPreview() async {
+    if (!_ready) return false;
+    if (!await _requestPermission()) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final samples = <(CheckIn, ReminderFacts)>[
+      (CheckIn.first, const ReminderFacts()), // never logged
+      (
+        CheckIn.first,
+        ReminderFacts(lastExpense: today.subtract(const Duration(days: 4))),
+      ), // long silence
+      (CheckIn.first, ReminderFacts(lastExpense: today)), // morning
+      (CheckIn.middle, ReminderFacts(lastExpense: today)), // midday
+      (
+        CheckIn.middle,
+        ReminderFacts(lastExpense: today, monthTotal: 4500, budget: 5000),
+      ), // budget low
+      (
+        CheckIn.middle,
+        ReminderFacts(lastExpense: today, monthTotal: 5600, budget: 5000),
+      ), // over budget
+      (
+        CheckIn.last,
+        ReminderFacts(
+          lastExpense: today,
+          todayCount: 3,
+          todayTotal: 845,
+          monthTotal: 2100,
+          budget: 5000,
+        ),
+      ), // evening summary
+      (CheckIn.last, ReminderFacts(lastExpense: today)), // evening, nothing
+    ];
+    for (var i = 0; i < samples.length; i++) {
+      final (position, facts) = samples[i];
+      final message = reminderMessage(
+        slot: now,
+        now: now,
+        position: position,
+        facts: facts,
+      );
+      await _plugin.zonedSchedule(
+        id: _previewFirstId + i,
+        title: message.title,
+        body: message.body,
+        scheduledDate: tz.TZDateTime.now(tz.local)
+            .add(Duration(seconds: 8 * (i + 1))),
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'expense_reminders',
+            'Expense reminders',
+            channelDescription:
+                'Check-in reminders when nothing has been logged',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    }
+    return true;
   }
 
   Future<bool> _requestPermission() async {

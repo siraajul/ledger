@@ -116,6 +116,28 @@ Future<void> showReminderDialog(BuildContext context) async {
           ),
           actions: [
             BrutalDialogButton(
+              label: 'PREVIEW MESSAGES',
+              color: kYellow,
+              fillOnPress: true,
+              onTap: () async {
+                HapticFeedback.mediumImpact();
+                final messenger = ScaffoldMessenger.maybeOf(dialogContext);
+                final sent = await service.sendPreview();
+                messenger?.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      sent ? 'SAMPLE REMINDERS ARRIVING OVER THE NEXT MINUTE' : 'NOTIFICATIONS ARE OFF FOR LEDGER — ENABLE THEM IN SETTINGS',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    backgroundColor: kBlack,
+                  ),
+                );
+              },
+            ),
+            BrutalDialogButton(
               label: 'CANCEL',
               color: kWhite,
               fillOnPress: true,

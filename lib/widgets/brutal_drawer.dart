@@ -7,6 +7,15 @@ import '../bloc/settings/settings_state.dart';
 import '../services/auth.dart';
 import '../theme.dart';
 
+/// Up to two initials. Splitting on runs of whitespace matters: a trailing
+/// space (iOS autocorrect adds one) used to yield an empty word, and `''[0]`
+/// threw while building the drawer, which renders blank in release builds.
+String drawerInitials(String name) {
+  final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+  if (words.isEmpty) return '?';
+  return words.map((w) => w[0]).take(2).join().toUpperCase();
+}
+
 class BrutalDrawer extends StatelessWidget {
   final VoidCallback? onNavigateToHome;
   final VoidCallback? onNavigateToStats;
@@ -88,9 +97,7 @@ class BrutalDrawer extends StatelessWidget {
   }
 
   Widget _buildHeader(String userName) {
-    final initials = userName.isNotEmpty
-        ? userName.split(' ').map((w) => w[0]).join().toUpperCase()
-        : '?';
+    final initials = drawerInitials(userName);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +112,7 @@ class BrutalDrawer extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              initials.length > 2 ? initials.substring(0, 2) : initials,
+              initials,
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
             ),
           ),

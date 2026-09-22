@@ -1,0 +1,89 @@
+name: Internal release
+
+# Every push to main (including merged PRs) ships an Android build to the
+# Firebase App Distribution "internal" group. iOS is still released from a Mac
+# with scripts/distribute.sh, since it needs Apple signing assets.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.vscode/**'
+  workflow_dispatch:
+
+# One release at a time; a newer push supersedes a queued one.
+concurrency:
+  group: internal-release
+  cancel-in-progress: false
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Empty until the secret is added; the upload step then skips instead of
+      # failing the build.
+      SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # distribute.sh uses the last commit as release notes
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Gates: a broken build should never reach testers.
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Restore release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          cat > android/key.properties <<EOF
+          storeFile=$RUNNER_TEMP/upload.jks
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          EOF
+
+      - name: Build and distribute to testers
+        if: env.SERVICE_ACCOUNT_JSON != ''
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          TESTER_GROUPS: internal
+        run: |
+          set -euo pipefail
+          printf '%s' "$SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          scripts/distribute.sh android
+
+      - name: Build only (no FIREBASE_SERVICE_ACCOUNT secret yet)
+        if: env.SERVICE_ACCOUNT_JSON == ''
+        run: |
+          echo "::warning::FIREBASE_SERVICE_ACCOUNT is not set - building without distributing."
+          flutter build apk --release --build-number "$(( $(date +%s) / 60 ))"
+
+      - name: Clean up secrets on disk
+        if: always()
+        run: rm -f android/key.properties "$RUNNER_TEMP/upload.jks" "$RUNNER_TEMP/firebase-service-account.json"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14

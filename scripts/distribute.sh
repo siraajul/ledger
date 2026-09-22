@@ -33,5 +33,6 @@ esac
 
 npx -y firebase-tools@latest appdistribution:distribute "$BINARY" \
   --app "$APP_ID" \
+  --project "${FIREBASE_PROJECT:-ledger-cea2a}" \
   --groups "$TESTER_GROUPS" \
   --release-notes "$NOTES"

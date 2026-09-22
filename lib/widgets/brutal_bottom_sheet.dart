@@ -10,6 +10,7 @@ import '../bloc/settings/settings_state.dart';
 import '../theme.dart';
 import 'brutal_widgets.dart';
 import 'pin_dialog.dart';
+import 'reminder_dialog.dart';
 import 'settings_tiles.dart';
 
 class BrutalBottomSheet extends StatefulWidget {
@@ -193,6 +194,19 @@ class _BrutalBottomSheetState extends State<BrutalBottomSheet> {
             HapticFeedback.mediumImpact();
             Navigator.pop(context);
             _showSetPinDialog();
+          },
+        ),
+        const SizedBox(height: 8),
+        SettingsTile(
+          icon: Icons.notifications_none_rounded,
+          label: 'REMINDER',
+          color: kGreen,
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            // The sheet unmounts once popped; the navigator's context doesn't.
+            final navigatorContext = Navigator.of(context).context;
+            Navigator.pop(context);
+            showReminderDialog(navigatorContext);
           },
         ),
         const SizedBox(height: 8),

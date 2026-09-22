@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../bloc/settings/settings_bloc.dart';
 import '../bloc/settings/settings_state.dart';
+import '../services/auth.dart';
 import '../theme.dart';
 
 class BrutalDrawer extends StatelessWidget {
@@ -24,50 +26,61 @@ class BrutalDrawer extends StatelessWidget {
       child: SafeArea(
         child: BlocBuilder<SettingsBloc, SettingsState>(
           builder: (context, settings) => Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(settings.userName),
-              const SizedBox(height: 32),
-              _buildMenuItem(
-                icon: Icons.home_rounded,
-                label: 'HOME',
-                color: kBlue,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  Navigator.pop(context);
-                  onNavigateToHome?.call();
-                },
-              ),
-              const SizedBox(height: 8),
-              _buildMenuItem(
-                icon: Icons.bar_chart_rounded,
-                label: 'STATS',
-                color: kPink,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  Navigator.pop(context);
-                  onNavigateToStats?.call();
-                },
-              ),
-              const SizedBox(height: 8),
-              _buildMenuItem(
-                icon: Icons.savings_outlined,
-                label: 'BUDGET',
-                color: kGreen,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  Navigator.pop(context);
-                  onNavigateToBudget?.call();
-                },
-              ),
-              const Spacer(),
-              _buildBudgetCard(settings.budget),
-              const SizedBox(height: 16),
-              _buildVersionInfo(),
-            ],
-          ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(settings.userName),
+                const SizedBox(height: 32),
+                _buildMenuItem(
+                  icon: Icons.home_rounded,
+                  label: 'HOME',
+                  color: kBlue,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    Navigator.pop(context);
+                    onNavigateToHome?.call();
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildMenuItem(
+                  icon: Icons.bar_chart_rounded,
+                  label: 'STATS',
+                  color: kPink,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    Navigator.pop(context);
+                    onNavigateToStats?.call();
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildMenuItem(
+                  icon: Icons.savings_outlined,
+                  label: 'BUDGET',
+                  color: kGreen,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    Navigator.pop(context);
+                    onNavigateToBudget?.call();
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildMenuItem(
+                  icon: Icons.logout_rounded,
+                  label: 'SIGN OUT',
+                  color: kOrange,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    Navigator.pop(context);
+                    signOut();
+                  },
+                ),
+                const Spacer(),
+                _buildBudgetCard(settings.budget),
+                const SizedBox(height: 16),
+                _buildVersionInfo(),
+              ],
+            ),
           ),
         ),
       ),
@@ -93,10 +106,7 @@ class BrutalDrawer extends StatelessWidget {
           child: Center(
             child: Text(
               initials.length > 2 ? initials.substring(0, 2) : initials,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-              ),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
             ),
           ),
         ),
@@ -135,12 +145,7 @@ class BrutalDrawer extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return _MenuItemTile(
-      icon: icon,
-      label: label,
-      color: color,
-      onTap: onTap,
-    );
+    return _MenuItemTile(icon: icon, label: label, color: color, onTap: onTap);
   }
 
   Widget _buildBudgetCard(double budget) {
@@ -166,7 +171,7 @@ class BrutalDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '\$${budget.toStringAsFixed(0)}',
+            '$kCurrency${budget.toStringAsFixed(0)}',
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
@@ -233,11 +238,7 @@ class _MenuItemTileState extends State<_MenuItemTile> {
         ),
         child: Row(
           children: [
-            Icon(
-              widget.icon,
-              size: 20,
-              color: _isPressed ? kWhite : kBlack,
-            ),
+            Icon(widget.icon, size: 20, color: _isPressed ? kWhite : kBlack),
             const SizedBox(width: 12),
             Text(
               widget.label,

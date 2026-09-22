@@ -7,18 +7,22 @@ cd "$(dirname "$0")/.."
 PLATFORM="${1:-android}"
 TESTER_GROUPS="${TESTER_GROUPS:-internal}"
 NOTES="$(git log -1 --pretty='%h %s')"
+# Unique, increasing build number per upload (minutes since epoch; fits
+# Android's versionCode limit) so releases never share a version.
+BUILD_NUMBER="${BUILD_NUMBER:-$(( $(date +%s) / 60 ))}"
 
 case "$PLATFORM" in
   android)
     APP_ID="1:770523884423:android:efdc7400f47cf49876c122"
-    flutter build apk --release
+    flutter build apk --release --build-number "$BUILD_NUMBER"
     BINARY="build/app/outputs/flutter-apk/app-release.apk"
     ;;
   ios)
     APP_ID="1:770523884423:ios:b6e6c89603c9f87676c122"
     # Development export: only devices registered in the Apple Developer portal
     # can install. Switch to ad-hoc/enterprise if you need wider reach.
-    flutter build ipa --release --export-method development
+    flutter build ipa --release --export-method development \
+      --build-number "$BUILD_NUMBER"
     BINARY="$(ls build/ios/ipa/*.ipa | head -1)"
     ;;
   *)

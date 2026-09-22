@@ -24,14 +24,16 @@ class PinDialog extends StatefulWidget {
     final savedPin = prefs.getString('pin_code');
 
     if (savedPin == null || savedPin.isEmpty) return true;
+    if (!context.mounted) return false;
 
+    final navigator = Navigator.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (_) => PinDialog(
         title: 'ENTER PIN',
         confirmLabel: 'CONFIRM',
-        onConfirmed: () => Navigator.pop(context, true),
+        onConfirmed: () => navigator.pop(true),
       ),
     );
 

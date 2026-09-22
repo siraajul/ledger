@@ -384,7 +384,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       onTap: () async {
         HapticFeedback.heavyImpact();
         final allowed = await PinDialog.verify(context, action: 'DELETE EXPENSE');
-        if (!allowed) return;
+        if (!allowed || !mounted) return;
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => _ConfirmDialog(

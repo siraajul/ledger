@@ -31,7 +31,13 @@ class HomeScreen extends StatelessWidget {
           return CustomScrollView(
             slivers: [
               _buildHeader(),
-              _buildSummary(state.filter, state.total, expenses.length),
+              _buildSummary(
+                context,
+                state.filter,
+                state.total,
+                expenses.length,
+                state.thisMonth,
+              ),
               _buildTimeFilter(context, state.filter),
               _buildExpenseList(context, expenses),
             ],
@@ -91,7 +97,20 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummary(TimeFilter filter, double total, int count) {
+Widget _buildSummary(
+    BuildContext context,
+    TimeFilter filter,
+    double total,
+    int count,
+    List<Expense> thisMonth,
+  ) {
+    final budget = context.select<SettingsBloc, double>((s) => s.state.budget);
+    final isMonth = filter == TimeFilter.month;
+    final spent = isMonth ? total : thisMonth.fold(0.0, (s, e) => s + e.amount);
+    final remaining = budget - spent;
+    final overBudget = remaining < 0;
+    final showBudget = isMonth && budget > 0;
+
     return SliverToBoxAdapter(
       child: StaggeredAnimation(
         index: 1,
@@ -147,6 +166,15 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (showBudget) ...[
+                  const SizedBox(height: 16),
+                  _BudgetBar(
+                    spent: spent,
+                    budget: budget,
+                    remaining: remaining,
+                    overBudget: overBudget,
+                  ),
+                ],
               ],
             ),
           ),
@@ -368,7 +396,10 @@ class HomeScreen extends StatelessWidget {
                       },
                       onDelete: () async {
                         HapticFeedback.heavyImpact();
-                        final allowed = await PinDialog.verify(context, action: 'DELETE EXPENSE');
+                        final allowed = await _confirmDelete(
+                          context,
+                          action: 'DELETE EXPENSE',
+                        );
                         if (!allowed || !context.mounted) return;
                         context
                             .read<ExpenseBloc>()
@@ -421,5 +452,207 @@ class HomeScreen extends StatelessWidget {
     if (dateOnly == today) return 'TODAY';
     if (dateOnly == yesterday) return 'YESTERDAY';
     return DateFormat('EEE, MMM d').format(date);
+  }
+}
+
+/// Mirrors the swipe-delete flow exactly: confirm dialog, then PIN
+/// gate, then the caller proceeds. Long-press previously skipped the
+/// confirm step, giving accidental deletions fewer checks.
+Future<bool> _confirmDelete(BuildContext context, {required String action}) async {
+    final navigator = Navigator.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: kWhite,
+        shape: RoundedRectangleBorder(
+          side: const BorderSide(color: kBlack, width: 3),
+          borderRadius: BorderRadius.zero,
+        ),
+        title: const Text(
+          'DELETE?',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        actions: [
+          _DeleteConfirmButton(
+            label: 'CANCEL',
+            color: kWhite,
+            onTap: () => navigator.pop(false),
+          ),
+          _DeleteConfirmButton(
+            label: 'DELETE',
+            color: kPink,
+            onTap: () => navigator.pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return false;
+    if (!context.mounted) return false;
+    return PinDialog.verify(context, action: action);
+  }
+
+/// Budget progress strip shown under the summary card when the monthly
+/// budget is set and the active filter is MONTH. Drives the only
+/// feedback a user gets for the budget feature: how much is left, or
+/// how far over they've drifted.
+class _BudgetBar extends StatefulWidget {
+  final double spent;
+  final double budget;
+  final double remaining;
+  final bool overBudget;
+
+  const _BudgetBar({
+    required this.spent,
+    required this.budget,
+    required this.remaining,
+    required this.overBudget,
+  });
+
+  @override
+  State<_BudgetBar> createState() => _BudgetBarState();
+}
+
+class _BudgetBarState extends State<_BudgetBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..forward();
+  }
+
+  @override
+  void didUpdateWidget(_BudgetBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.spent != widget.spent) {
+      _controller.reset();
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = (widget.spent / widget.budget).clamp(0.0, 1.0);
+    final barColor = widget.overBudget ? kPink : kGreen;
+    final label = widget.overBudget
+        ? 'OVER BY \$${(-widget.remaining).toStringAsFixed(0)}'
+        : '\$${widget.remaining.toStringAsFixed(0)} LEFT';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'BUDGET',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1,
+                color: widget.overBudget ? kPink : kBlack,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: widget.overBudget ? kPink : kGreen,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return Container(
+              height: 14,
+              width: constraints.maxWidth,
+              decoration: const BoxDecoration(
+                color: kWhite,
+                border: Border.fromBorderSide(
+                    BorderSide(color: kBlack, width: 2)),
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.0, end: 1.0).animate(
+                    CurvedAnimation(
+                        parent: _controller, curve: Curves.easeOutCubic),
+                  ),
+                  child: Container(
+                    height: 14,
+                    width: constraints.maxWidth * ratio,
+                    color: barColor,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// Local copy of the brutal confirm button so the long-press delete
+/// dialog doesn't reach into add_expense_screen.dart's private type.
+class _DeleteConfirmButton extends StatefulWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _DeleteConfirmButton({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  State<_DeleteConfirmButton> createState() => _DeleteConfirmButtonState();
+}
+
+class _DeleteConfirmButtonState extends State<_DeleteConfirmButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 80),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: _isPressed ? widget.color.withValues(alpha: 0.8) : widget.color,
+          border: Border.all(color: kBlack, width: 2),
+          boxShadow: _isPressed
+              ? []
+              : const [BoxShadow(offset: Offset(2, 2), color: kBlack)],
+        ),
+        child: Text(
+          widget.label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: kBlack,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
   }
 }

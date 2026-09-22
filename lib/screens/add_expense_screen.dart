@@ -129,6 +129,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 children: [
                   PressIconButton(
                     icon: Icons.close,
+                    label: 'Close',
                     onTap: () {
                       HapticFeedback.lightImpact();
                       Navigator.pop(context);
@@ -174,109 +175,119 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Widget _buildAmountField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FormLabel('AMOUNT', kOrange),
-        const SizedBox(height: 12),
-        Container(
-          decoration: const BoxDecoration(
-            color: kWhite,
-            border: Border.fromBorderSide(BorderSide(color: kBlack, width: 3)),
-            boxShadow: [BoxShadow(offset: Offset(4, 4), color: kBlack)],
-          ),
-          child: TextFormField(
-            controller: _amountController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-            ],
-            autofocus: !_isEditing,
-            style: const TextStyle(
-              fontSize: 56,
-              fontWeight: FontWeight.w900,
-              color: kBlack,
-              letterSpacing: -2,
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FormLabel('AMOUNT', kOrange),
+          const SizedBox(height: 12),
+          Container(
+            decoration: const BoxDecoration(
+              color: kWhite,
+              border: Border.fromBorderSide(
+                BorderSide(color: kBlack, width: 3),
+              ),
+              boxShadow: [BoxShadow(offset: Offset(4, 4), color: kBlack)],
             ),
-            decoration: InputDecoration(
-              prefixText: '$kCurrency ',
-              prefixStyle: TextStyle(
+            child: TextFormField(
+              controller: _amountController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+              ],
+              autofocus: !_isEditing,
+              style: const TextStyle(
                 fontSize: 56,
                 fontWeight: FontWeight.w900,
-                color: Colors.grey[300],
+                color: kBlack,
                 letterSpacing: -2,
               ),
-              border: InputBorder.none,
-              hintText: '0',
-              hintStyle: TextStyle(
-                fontSize: 56,
-                fontWeight: FontWeight.w900,
-                color: Colors.grey[100],
-                letterSpacing: -2,
+              decoration: InputDecoration(
+                prefixText: '$kCurrency ',
+                prefixStyle: TextStyle(
+                  fontSize: 56,
+                  fontWeight: FontWeight.w900,
+                  color: kMutedText,
+                  letterSpacing: -2,
+                ),
+                border: InputBorder.none,
+                hintText: '0',
+                hintStyle: TextStyle(
+                  fontSize: 56,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.grey[100],
+                  letterSpacing: -2,
+                ),
+                contentPadding: const EdgeInsets.all(20),
+                errorStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: kDangerText,
+                  letterSpacing: 1,
+                ),
               ),
-              contentPadding: const EdgeInsets.all(20),
-              errorStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: kPink,
-                letterSpacing: 1,
-              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'ENTER AN AMOUNT';
+                if (double.tryParse(value) == null) return 'ENTER A NUMBER';
+                if (double.parse(value) <= 0) return 'ENTER AN AMOUNT ABOVE 0';
+                return null;
+              },
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'ENTER AMOUNT';
-              if (double.tryParse(value) == null) return 'NOT A NUMBER';
-              if (double.parse(value) <= 0) return 'MUST BE > 0';
-              return null;
-            },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildTitleField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FormLabel('DESCRIPTION', kBlue),
-        const SizedBox(height: 12),
-        Container(
-          decoration: const BoxDecoration(
-            color: kWhite,
-            border: Border.fromBorderSide(BorderSide(color: kBlack, width: 3)),
-            boxShadow: [BoxShadow(offset: Offset(3, 3), color: kBlack)],
-          ),
-          child: TextFormField(
-            controller: _titleController,
-            textCapitalization: TextCapitalization.sentences,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: kBlack,
-            ),
-            decoration: InputDecoration(
-              hintText: 'WHAT WAS IT FOR?',
-              hintStyle: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[300],
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FormLabel('DESCRIPTION', kBlue),
+          const SizedBox(height: 12),
+          Container(
+            decoration: const BoxDecoration(
+              color: kWhite,
+              border: Border.fromBorderSide(
+                BorderSide(color: kBlack, width: 3),
               ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
-              errorStyle: const TextStyle(
-                fontSize: 12,
+              boxShadow: [BoxShadow(offset: Offset(3, 3), color: kBlack)],
+            ),
+            child: TextFormField(
+              controller: _titleController,
+              textCapitalization: TextCapitalization.sentences,
+              style: const TextStyle(
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: kPink,
-                letterSpacing: 1,
+                color: kBlack,
               ),
+              decoration: InputDecoration(
+                hintText: 'WHAT WAS IT FOR?',
+                hintStyle: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[300],
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(16),
+                errorStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: kDangerText,
+                  letterSpacing: 1,
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'ADD A DESCRIPTION';
+                return null;
+              },
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'REQUIRED';
-              return null;
-            },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -284,7 +295,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FormLabel('CATEGORY', kPink),
+        FormLabel('CATEGORY', kYellow),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -307,16 +318,54 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Widget _buildDateField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FormLabel('DATE', kPurple),
-        const SizedBox(height: 12),
-        GestureDetector(
-          onTap: _selectDate,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FormLabel('DATE', kPurple),
+          const SizedBox(height: 12),
+          BrutalTap(
+            onTap: _selectDate,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: kWhite,
+                border: Border.fromBorderSide(
+                  BorderSide(color: kBlack, width: 3),
+                ),
+                boxShadow: [BoxShadow(offset: Offset(3, 3), color: kBlack)],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    DateFormat('EEEE, MMM d, yyyy')
+                        .format(_selectedDate)
+                        .toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Icon(Icons.calendar_today, size: 18),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoteField() {
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FormLabel('NOTE', kGreen),
+          const SizedBox(height: 12),
+          Container(
             decoration: const BoxDecoration(
               color: kWhite,
               border: Border.fromBorderSide(
@@ -324,61 +373,29 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               boxShadow: [BoxShadow(offset: Offset(3, 3), color: kBlack)],
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  DateFormat('EEEE, MMM d, yyyy')
-                      .format(_selectedDate)
-                      .toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const Icon(Icons.calendar_today, size: 18),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNoteField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FormLabel('NOTE', kGreen),
-        const SizedBox(height: 12),
-        Container(
-          decoration: const BoxDecoration(
-            color: kWhite,
-            border: Border.fromBorderSide(BorderSide(color: kBlack, width: 3)),
-            boxShadow: [BoxShadow(offset: Offset(3, 3), color: kBlack)],
-          ),
-          child: TextFormField(
-            controller: _noteController,
-            maxLines: 3,
-            textCapitalization: TextCapitalization.sentences,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: kBlack,
-            ),
-            decoration: InputDecoration(
-              hintText: 'OPTIONAL',
-              hintStyle: TextStyle(
-                fontSize: 13,
+            child: TextFormField(
+              controller: _noteController,
+              maxLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+              style: const TextStyle(
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[300],
+                color: kBlack,
               ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
+              decoration: InputDecoration(
+                hintText: 'OPTIONAL',
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[300],
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(16),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -388,18 +405,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       color: kPink,
       onTap: () async {
         HapticFeedback.heavyImpact();
+        final confirmed = await showBrutalConfirm(
+          context,
+          title: 'DELETE THIS EXPENSE?',
+          confirmLabel: 'DELETE EXPENSE',
+          color: kPink,
+        );
+        if (!confirmed || !mounted) return;
         final allowed = await PinDialog.verify(
           context,
           action: 'DELETE EXPENSE',
         );
-        if (!allowed || !mounted) return;
-        final confirmed = await showBrutalConfirm(
-          context,
-          title: 'DELETE?',
-          confirmLabel: 'DELETE',
-          color: kPink,
-        );
-        if (confirmed && mounted) {
+        if (allowed && mounted) {
           context.read<ExpenseBloc>().add(ExpenseDeleted(widget.expense!.id));
           Navigator.pop(context);
         }

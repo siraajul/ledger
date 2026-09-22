@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme.dart';
+import 'brutal_widgets.dart';
+
 // Animated number that counts up/down
 class AnimatedCounter extends StatelessWidget {
   final double value;
@@ -20,15 +23,18 @@ class AnimatedCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Tabular digits so the width holds steady while it counts.
+    final tabular = (style ?? const TextStyle()).copyWith(
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: value),
-      duration: duration,
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : duration,
       curve: Curves.easeOutCubic,
       builder: (context, val, child) {
-        return Text(
-          '$prefix${val.toStringAsFixed(2)}$suffix',
-          style: style,
-        );
+        return Text('$prefix${val.toStringAsFixed(2)}$suffix', style: tabular);
       },
     );
   }
@@ -53,9 +59,11 @@ class StaggeredAnimation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    // Capped: rows built later by scrolling must not wait longer and longer.
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
-      duration: duration + (delay * index),
+      duration: duration + (delay * index.clamp(0, 4)),
       curve: Curves.easeOutCubic,
       builder: (context, val, child) {
         return Opacity(
@@ -101,13 +109,11 @@ class _AnimatedBarState extends State<AnimatedBar>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    _animation = Tween<double>(begin: 0, end: widget.ratio).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    _animation = Tween<double>(
+      begin: 0,
+      end: widget.ratio,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward();
   }
 
@@ -115,12 +121,10 @@ class _AnimatedBarState extends State<AnimatedBar>
   void didUpdateWidget(AnimatedBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.ratio != widget.ratio) {
-      _animation = Tween<double>(
-        begin: _animation.value,
-        end: widget.ratio,
-      ).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-      );
+      _animation = Tween<double>(begin: _animation.value, end: widget.ratio)
+          .animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+          );
       _controller
         ..reset()
         ..forward();
@@ -144,7 +148,9 @@ class _AnimatedBarState extends State<AnimatedBar>
               height: widget.height,
               width: constraints.maxWidth,
               decoration: const BoxDecoration(
-                border: Border.fromBorderSide(BorderSide(color: Color(0xFF1A1A1A), width: 2)),
+                border: Border.fromBorderSide(
+                  BorderSide(color: Color(0xFF1A1A1A), width: 2),
+                ),
               ),
               child: Align(
                 alignment: Alignment.centerLeft,
@@ -171,17 +177,17 @@ class SlideToDeleteBackground extends StatelessWidget {
     return Container(
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.only(right: 20),
-      color: const Color(0xFFFF6B9D),
+      color: kPink,
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.delete, color: Colors.white, size: 28),
+          Icon(Icons.delete, color: kBlack, size: 28),
           SizedBox(height: 4),
           Text(
             'DELETE',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 10,
+              color: kBlack,
+              fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 1,
             ),
@@ -206,7 +212,7 @@ class SwipeToDelete extends StatelessWidget {
     super.key,
     required this.child,
     required this.onDismissed,
-    this.confirmMessage = 'DELETE?',
+    this.confirmMessage = 'DELETE THIS EXPENSE?',
     this.beforeDismiss,
   });
 
@@ -218,33 +224,13 @@ class SwipeToDelete extends StatelessWidget {
       background: const SlideToDeleteBackground(),
       confirmDismiss: (direction) async {
         HapticFeedback.heavyImpact();
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: Colors.white,
-            shape: const RoundedRectangleBorder(
-              side: BorderSide(color: Color(0xFF1A1A1A), width: 3),
-            ),
-            title: Text(
-              confirmMessage,
-              style: const TextStyle(fontWeight: FontWeight.w900),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('CANCEL'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                  'DELETE',
-                  style: TextStyle(color: Color(0xFFFF6B9D)),
-                ),
-              ),
-            ],
-          ),
+        final confirmed = await showBrutalConfirm(
+          context,
+          title: confirmMessage,
+          confirmLabel: 'DELETE EXPENSE',
+          color: kPink,
         );
-        if (confirmed != true) return false;
+        if (!confirmed) return false;
         return await beforeDismiss?.call() ?? true;
       },
       onDismissed: (direction) {
@@ -256,69 +242,25 @@ class SwipeToDelete extends StatelessWidget {
   }
 }
 
-// Pulse animation for attention
-class PulseAnimation extends StatefulWidget {
-  final Widget child;
-  final Duration duration;
-
-  const PulseAnimation({
-    super.key,
-    required this.child,
-    this.duration = const Duration(milliseconds: 1500),
-  });
-
-  @override
-  State<PulseAnimation> createState() => _PulseAnimationState();
-}
-
-class _PulseAnimationState extends State<PulseAnimation>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: Tween<double>(begin: 1.0, end: 1.05).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-      ),
-      child: widget.child,
-    );
-  }
-}
-
 // Slide page transition
 class SlidePageTransition extends PageRouteBuilder {
   final Widget page;
 
   SlidePageTransition({required this.page})
-      : super(
-          pageBuilder: (context, animation, secondaryAnimation) => page,
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final tween = Tween<Offset>(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).chain(CurveTween(curve: Curves.easeOutCubic));
+    : super(
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          if (MediaQuery.disableAnimationsOf(context)) return child;
+          final tween = Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).chain(CurveTween(curve: Curves.easeOutCubic));
 
-            return SlideTransition(
-              position: animation.drive(tween),
-              child: child,
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 400),
-        );
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+      );
 }

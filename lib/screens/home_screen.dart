@@ -78,7 +78,7 @@ class HomeScreen extends StatelessWidget {
                     child: Text(
                       DateFormat('MMM d, yyyy').format(now).toUpperCase(),
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1,
                       ),
@@ -145,7 +145,7 @@ class HomeScreen extends StatelessWidget {
                 Text(
                   _getFilterLabel(filter),
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 2,
                   ),
@@ -177,7 +177,7 @@ class HomeScreen extends StatelessWidget {
                   child: Text(
                     '$count TRANSACTIONS',
                     style: const TextStyle(
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1,
                     ),
@@ -210,33 +210,36 @@ class HomeScreen extends StatelessWidget {
             children: TimeFilter.values.map((filter) {
               final isSelected = selected == filter;
               return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    context.read<ExpenseBloc>().add(FilterChanged(filter));
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    curve: Curves.easeOut,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? kBlack : kWhite,
-                      border: Border.all(color: kBlack, width: 2),
-                      boxShadow: isSelected
-                          ? []
-                          : const [
-                              BoxShadow(offset: Offset(2, 2), color: kBlack),
-                            ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        _getFilterName(filter).toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: isSelected ? kYellow : kBlack,
-                          letterSpacing: 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: BrutalTap(
+                    selected: isSelected,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      context.read<ExpenseBloc>().add(FilterChanged(filter));
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      curve: Curves.easeOut,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      decoration: BoxDecoration(
+                        color: isSelected ? kBlack : kWhite,
+                        border: Border.all(color: kBlack, width: 2),
+                        boxShadow: isSelected
+                            ? []
+                            : const [
+                                BoxShadow(offset: Offset(2, 2), color: kBlack),
+                              ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          _getFilterName(filter).toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: isSelected ? kYellow : kBlack,
+                            letterSpacing: 1,
+                          ),
                         ),
                       ),
                     ),
@@ -261,22 +264,20 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  PulseAnimation(
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: const BoxDecoration(
-                        color: kWhite,
-                        border: Border.fromBorderSide(
-                          BorderSide(color: kBlack, width: 3),
-                        ),
-                        boxShadow: [
-                          BoxShadow(offset: Offset(3, 3), color: kBlack),
-                        ],
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: kWhite,
+                      border: Border.fromBorderSide(
+                        BorderSide(color: kBlack, width: 3),
                       ),
-                      child: const Center(
-                        child: Text('📦', style: TextStyle(fontSize: 36)),
-                      ),
+                      boxShadow: [
+                        BoxShadow(offset: Offset(3, 3), color: kBlack),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text('📦', style: TextStyle(fontSize: 36)),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -294,12 +295,12 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[500],
+                      color: kMutedText,
                       height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  GestureDetector(
+                  BrutalTap(
                     onTap: () {
                       HapticFeedback.mediumImpact();
                       Navigator.push(
@@ -324,7 +325,7 @@ class HomeScreen extends StatelessWidget {
                       child: const Text(
                         'ADD FIRST EXPENSE',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1,
                         ),
@@ -373,7 +374,7 @@ class HomeScreen extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: const BoxDecoration(
-                          color: kPink,
+                          color: kOrange,
                           border: Border.fromBorderSide(
                             BorderSide(color: kBlack, width: 2),
                           ),
@@ -381,7 +382,7 @@ class HomeScreen extends StatelessWidget {
                         child: Text(
                           _formatDateHeader(date).toUpperCase(),
                           style: const TextStyle(
-                            fontSize: 10,
+                            fontSize: 12,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1,
                           ),
@@ -393,6 +394,7 @@ class HomeScreen extends StatelessWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
                           color: kBlack,
+                          fontFeatures: [FontFeature.tabularFigures()],
                         ),
                       ),
                     ],
@@ -491,8 +493,8 @@ Future<bool> _confirmDelete(
 }) async {
   final confirmed = await showBrutalConfirm(
     context,
-    title: 'DELETE?',
-    confirmLabel: 'DELETE',
+    title: 'DELETE THIS EXPENSE?',
+    confirmLabel: 'DELETE EXPENSE',
     color: kPink,
   );
   if (!confirmed || !context.mounted) return false;

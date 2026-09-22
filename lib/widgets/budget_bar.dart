@@ -68,18 +68,19 @@ class _BudgetBarState extends State<BudgetBar>
             Text(
               'BUDGET',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1,
-                color: widget.overBudget ? kPink : kBlack,
+                color: widget.overBudget ? kDangerText : kBlack,
               ),
             ),
+            const Spacer(),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: widget.overBudget ? kPink : kGreen,
+                color: widget.overBudget ? kDangerText : kBlack,
               ),
             ),
           ],
@@ -99,12 +100,14 @@ class _BudgetBarState extends State<BudgetBar>
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.0, end: 1.0).animate(
-                    CurvedAnimation(
-                      parent: _controller,
-                      curve: Curves.easeOutCubic,
-                    ),
-                  ),
+                  scale: MediaQuery.disableAnimationsOf(context)
+                      ? kAlwaysCompleteAnimation
+                      : Tween<double>(begin: 0.0, end: 1.0).animate(
+                          CurvedAnimation(
+                            parent: _controller,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
                   child: Container(
                     height: 14,
                     width: constraints.maxWidth * ratio,

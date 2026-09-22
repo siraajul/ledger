@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'brutal_widgets.dart';
 
 class FormLabel extends StatelessWidget {
   final String text;
@@ -20,7 +21,7 @@ class FormLabel extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w800,
           letterSpacing: 2,
         ),
@@ -31,8 +32,14 @@ class FormLabel extends StatelessWidget {
 
 class PressIconButton extends StatefulWidget {
   final IconData icon;
+  final String label;
   final VoidCallback onTap;
-  const PressIconButton({super.key, required this.icon, required this.onTap});
+  const PressIconButton({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   State<PressIconButton> createState() => _IconButtonState();
@@ -43,16 +50,13 @@ class _IconButtonState extends State<PressIconButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
+    return BrutalTap(
+      onTap: widget.onTap,
+      label: widget.label,
+      onPressedChanged: (pressed) => setState(() => _isPressed = pressed),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 80),
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
           color: kWhite,
           border: Border.all(color: kBlack, width: 2),
@@ -79,16 +83,12 @@ class _SaveButtonState extends State<SaveButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
+    return BrutalTap(
+      onTap: widget.onTap,
+      onPressedChanged: (pressed) => setState(() => _isPressed = pressed),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 80),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
           color: kGreen,
           border: Border.all(color: kBlack, width: 2),
@@ -132,13 +132,10 @@ class _CategoryChipState extends State<CategoryChip> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
+    return BrutalTap(
+      onTap: widget.onTap,
+      selected: widget.isSelected,
+      onPressedChanged: (pressed) => setState(() => _isPressed = pressed),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 80),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -157,7 +154,7 @@ class _CategoryChipState extends State<CategoryChip> {
             Text(
               widget.label.toUpperCase(),
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
                 color: widget.isSelected ? kYellow : kBlack,
                 letterSpacing: 0.5,
@@ -191,13 +188,9 @@ class _BrutalActionButtonState extends State<BrutalActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
+    return BrutalTap(
+      onTap: widget.onTap,
+      onPressedChanged: (pressed) => setState(() => _isPressed = pressed),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 80),
         width: double.infinity,

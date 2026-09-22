@@ -11,6 +11,11 @@ const kGreen = Color(0xFF00E676);
 const kOrange = Color(0xFFFF9100);
 const kPurple = Color(0xFFBB86FC);
 
+// Text-only roles. The fills above fail 4.5:1 as text on kWhite/kBg/kYellow;
+// these pass on all three. kPink stays the destructive/error *fill*.
+const kDangerText = Color(0xFFAD1457);
+const kMutedText = Color(0xFF616161);
+
 // Bengali taka sign (U+09F3); rendered by the platform's Bengali fallback font.
 const kCurrency = '৳';
 

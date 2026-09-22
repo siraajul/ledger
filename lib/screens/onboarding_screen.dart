@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/settings/settings_bloc.dart';
 import '../bloc/settings/settings_event.dart';
 import '../theme.dart';
+import '../widgets/brutal_widgets.dart';
 import 'onboarding_pages.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
   String _currentName = '';
+  bool _nameMissing = false;
 
   @override
   void dispose() {
@@ -25,20 +27,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage == 1 && _currentName.trim().isEmpty) return;
+    if (_currentPage == 1 && _currentName.trim().isEmpty) {
+      setState(() => _nameMissing = true);
+      return;
+    }
     if (_currentPage == 3) {
       _completeOnboarding();
     } else {
-      _controller.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      _goToPage(_currentPage + 1);
     }
   }
 
   void _previousPage() {
-    if (_currentPage > 0) {
-      _controller.previousPage(
+    if (_currentPage > 0) _goToPage(_currentPage - 1);
+  }
+
+  void _goToPage(int page) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.jumpToPage(page);
+    } else {
+      _controller.animateToPage(
+        page,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
@@ -89,10 +98,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Row(
         children: [
           if (_currentPage > 0)
-            GestureDetector(
+            BrutalTap(
               onTap: _previousPage,
+              label: 'Back',
               child: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(11),
                 decoration: const BoxDecoration(
                   color: kWhite,
                   border: Border.fromBorderSide(
@@ -103,7 +113,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             )
           else
-            const SizedBox(width: 36),
+            const SizedBox(width: 44),
           const Spacer(),
           ...List.generate(4, (index) {
             final isActive = index == _currentPage;
@@ -119,7 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             );
           }),
           const Spacer(),
-          const SizedBox(width: 36),
+          const SizedBox(width: 44),
         ],
       ),
     );
@@ -162,7 +172,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: const BoxDecoration(
-              color: kPink,
+              color: kOrange,
               border: Border.fromBorderSide(
                 BorderSide(color: kBlack, width: 2),
               ),
@@ -186,7 +196,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildNamePage() {
     return NamePageContent(
       onNext: _nextPage,
-      onNameChanged: (name) => _currentName = name,
+      error: _nameMissing ? 'ENTER YOUR NAME TO CONTINUE' : null,
+      onNameChanged: (name) {
+        _currentName = name;
+        if (_nameMissing && name.trim().isNotEmpty) {
+          setState(() => _nameMissing = false);
+        }
+      },
     );
   }
 
@@ -249,7 +265,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-      child: GestureDetector(
+      child: BrutalTap(
         onTap: _nextPage,
         child: Container(
           width: double.infinity,

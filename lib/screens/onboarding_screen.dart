@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/settings/settings_bloc.dart';
@@ -220,20 +221,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 80),
-          Container(
-            width: 120,
-            height: 120,
-            decoration: const BoxDecoration(
-              color: kGreen,
-              border: Border.fromBorderSide(
-                BorderSide(color: kBlack, width: 4),
+          _SpringPopIn(
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: const BoxDecoration(
+                color: kGreen,
+                border: Border.fromBorderSide(
+                  BorderSide(color: kBlack, width: 4),
+                ),
+                boxShadow: [BoxShadow(offset: Offset(6, 6), color: kBlack)],
               ),
-              boxShadow: [BoxShadow(offset: Offset(6, 6), color: kBlack)],
-            ),
-            child: const Center(
-              child: Text(
-                '✓',
-                style: TextStyle(fontSize: 64, fontWeight: FontWeight.w900),
+              child: const Center(
+                child: Text(
+                  '✓',
+                  style: TextStyle(fontSize: 64, fontWeight: FontWeight.w900),
+                ),
               ),
             ),
           ),
@@ -288,6 +291,67 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// One-time celebration for the final onboarding page: a subtle spring
+/// from 0.9 with a fade. Reduced motion shows it settled.
+class _SpringPopIn extends StatefulWidget {
+  final Widget child;
+  const _SpringPopIn({required this.child});
+
+  @override
+  State<_SpringPopIn> createState() => _SpringPopInState();
+}
+
+class _SpringPopInState extends State<_SpringPopIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController.unbounded(
+    vsync: this,
+  );
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.value = 1;
+    } else {
+      _controller.animateWith(
+        SpringSimulation(
+          SpringDescription.withDurationAndBounce(
+            duration: const Duration(milliseconds: 500),
+            bounce: 0.2,
+          ),
+          0,
+          1,
+          0,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Opacity(
+        opacity: _controller.value.clamp(0.0, 1.0),
+        child: Transform.scale(
+          scale: 0.9 + 0.1 * _controller.value,
+          child: child,
+        ),
+      ),
+      child: widget.child,
     );
   }
 }

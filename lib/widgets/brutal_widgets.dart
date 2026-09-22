@@ -113,10 +113,7 @@ class _BrutalButtonState extends State<BrutalButton>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 80),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: kPress, vsync: this);
     _downAnimation = Tween<double>(
       begin: 0,
       end: 4,
@@ -214,10 +211,7 @@ class _BrutalCardState extends State<BrutalCard>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 80),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: kPress, vsync: this);
     _downAnimation = Tween<double>(
       begin: 0,
       end: 4,
@@ -310,7 +304,8 @@ class _BrutalDialogButtonState extends State<BrutalDialogButton> {
       onTap: widget.onTap,
       onPressedChanged: (pressed) => setState(() => _isPressed = pressed),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: kPress,
+        curve: kEaseOut,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: fill,

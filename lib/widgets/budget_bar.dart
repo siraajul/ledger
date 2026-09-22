@@ -76,7 +76,12 @@ class _BudgetBarState extends State<BudgetBar> {
             builder: (context, value, _) => FractionallySizedBox(
               alignment: Alignment.centerLeft,
               widthFactor: value,
-              child: ColoredBox(color: barColor),
+              // Colour change: plain ease, the skill's curve for colour.
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.ease,
+                color: barColor,
+              ),
             ),
           ),
         ),

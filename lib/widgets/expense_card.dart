@@ -30,10 +30,7 @@ class _ExpenseCardState extends State<ExpenseCard>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 80),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: kPress, vsync: this);
   }
 
   @override
@@ -72,7 +69,8 @@ class _ExpenseCardState extends State<ExpenseCard>
           const CustomSemanticsAction(label: 'Delete expense'): widget.onDelete,
         },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 80),
+          duration: kPress,
+          curve: kEaseOut,
           padding: const EdgeInsets.all(14),
           transform: Matrix4.translationValues(0, _isPressed ? 3 : 0, 0),
           decoration: const BoxDecoration(
@@ -82,7 +80,8 @@ class _ExpenseCardState extends State<ExpenseCard>
           child: Row(
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: kPress,
+                curve: kEaseOut,
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(

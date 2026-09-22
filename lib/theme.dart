@@ -21,6 +21,10 @@ const kCurrency = '৳';
 
 // One strong ease-out for all UI motion; Curves.easeOut is too soft.
 const kEaseOut = Cubic(0.23, 1, 0.32, 1);
+// iOS-like sheet curve for screens that rise from the bottom.
+const kEaseDrawer = Cubic(0.32, 0.72, 0, 1);
+// Press feedback: every pressable's fill/shadow change.
+const kPress = Duration(milliseconds: 100);
 
 const kBorder = BorderRadius.zero;
 const kShadow = BoxShadow(offset: Offset(4, 4), color: kBlack);

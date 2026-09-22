@@ -127,7 +127,8 @@ class _NavIconButtonState extends State<_NavIconButton>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
+          duration: kPress,
+          curve: kEaseOut,
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: _isPressed ? kBg : Colors.transparent,
@@ -195,6 +196,7 @@ class _NavItemState extends State<_NavItem>
         scale: _scaleAnimation,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
+          curve: kEaseOut,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: widget.isSelected
               ? const BoxDecoration(

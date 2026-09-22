@@ -55,7 +55,8 @@ class _IconButtonState extends State<PressIconButton> {
       label: widget.label,
       onPressedChanged: (pressed) => setState(() => _isPressed = pressed),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: kPress,
+        curve: kEaseOut,
         padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
           color: kWhite,
@@ -87,7 +88,8 @@ class _SaveButtonState extends State<SaveButton> {
       onTap: widget.onTap,
       onPressedChanged: (pressed) => setState(() => _isPressed = pressed),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: kPress,
+        curve: kEaseOut,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
           color: kGreen,
@@ -137,7 +139,8 @@ class _CategoryChipState extends State<CategoryChip> {
       selected: widget.isSelected,
       onPressedChanged: (pressed) => setState(() => _isPressed = pressed),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: kPress,
+        curve: kEaseOut,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: widget.isSelected ? kBlack : kWhite,
@@ -192,7 +195,8 @@ class _BrutalActionButtonState extends State<BrutalActionButton> {
       onTap: widget.onTap,
       onPressedChanged: (pressed) => setState(() => _isPressed = pressed),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: kPress,
+        curve: kEaseOut,
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(

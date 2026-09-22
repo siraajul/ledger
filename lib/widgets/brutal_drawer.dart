@@ -233,7 +233,8 @@ class _MenuItemTileState extends State<_MenuItemTile> {
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: kPress,
+        curve: kEaseOut,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         transform: Matrix4.translationValues(0, _isPressed ? 2 : 0, 0),
         decoration: BoxDecoration(

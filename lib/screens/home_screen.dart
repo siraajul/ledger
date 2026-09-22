@@ -18,10 +18,20 @@ import '../widgets/sync_badge.dart';
 import '../theme.dart';
 import '../widgets/budget_bar.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final VoidCallback? onMenuTap;
 
   const HomeScreen({super.key, this.onMenuTap});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  /// Ids already on screen. Anything outside it on the next build is a
+  /// newly added expense and fades in; null until the first load, so the
+  /// initial list doesn't animate.
+  Set<String>? _known;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +42,14 @@ class HomeScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           final expenses = state.filtered;
+          final known = _known;
+          final fresh = known == null
+              ? const <String>{}
+              : {
+                  for (final e in state.all)
+                    if (!known.contains(e.id)) e.id,
+                };
+          _known = {for (final e in state.all) e.id};
           return CustomScrollView(
             slivers: [
               _buildHeader(),
@@ -43,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                 state.thisMonth,
               ),
               _buildTimeFilter(context, state.filter),
-              _buildExpenseList(context, expenses),
+              _buildExpenseList(context, expenses, fresh),
             ],
           );
         },
@@ -151,10 +169,10 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                AnimatedCounter(
-                  value: total,
-                  prefix: kCurrency,
+                Text(
+                  '$kCurrency${total.toStringAsFixed(2)}',
                   style: const TextStyle(
+                    fontFeatures: [FontFeature.tabularFigures()],
                     fontSize: 44,
                     fontWeight: FontWeight.w900,
                     color: kBlack,
@@ -253,7 +271,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseList(BuildContext context, List<Expense> expenses) {
+  Widget _buildExpenseList(
+    BuildContext context,
+    List<Expense> expenses,
+    Set<String> fresh,
+  ) {
     if (expenses.isEmpty) {
       return SliverFillRemaining(
         child: Center(
@@ -408,33 +430,36 @@ class HomeScreen extends StatelessWidget {
                     onDismissed: () => context.read<ExpenseBloc>().add(
                       ExpenseDeleted(expense.id),
                     ),
-                    child: ExpenseCard(
-                      expense: expense,
-                      onTap: () async {
-                        HapticFeedback.mediumImpact();
-                        final allowed = await PinDialog.verify(
-                          context,
-                          action: 'EDIT EXPENSE',
-                        );
-                        if (!allowed || !context.mounted) return;
-                        Navigator.push(
-                          context,
-                          SlidePageTransition(
-                            page: AddExpenseScreen(expense: expense),
-                          ),
-                        );
-                      },
-                      onDelete: () async {
-                        HapticFeedback.heavyImpact();
-                        final allowed = await _confirmDelete(
-                          context,
-                          action: 'DELETE EXPENSE',
-                        );
-                        if (!allowed || !context.mounted) return;
-                        context.read<ExpenseBloc>().add(
-                          ExpenseDeleted(expense.id),
-                        );
-                      },
+                    child: EnterOnce(
+                      animate: fresh.contains(expense.id),
+                      child: ExpenseCard(
+                        expense: expense,
+                        onTap: () async {
+                          HapticFeedback.mediumImpact();
+                          final allowed = await PinDialog.verify(
+                            context,
+                            action: 'EDIT EXPENSE',
+                          );
+                          if (!allowed || !context.mounted) return;
+                          Navigator.push(
+                            context,
+                            SlidePageTransition(
+                              page: AddExpenseScreen(expense: expense),
+                            ),
+                          );
+                        },
+                        onDelete: () async {
+                          HapticFeedback.heavyImpact();
+                          final allowed = await _confirmDelete(
+                            context,
+                            action: 'DELETE EXPENSE',
+                          );
+                          if (!allowed || !context.mounted) return;
+                          context.read<ExpenseBloc>().add(
+                            ExpenseDeleted(expense.id),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),

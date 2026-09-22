@@ -4,38 +4,30 @@ import 'package:flutter/services.dart';
 import '../theme.dart';
 import 'brutal_widgets.dart';
 
-// Animated number that counts up/down
-class AnimatedCounter extends StatelessWidget {
-  final double value;
-  final TextStyle? style;
-  final String prefix;
-  final String suffix;
-  final Duration duration;
+/// Fades a newly added row in with a short rise. [animate] is read only
+/// when the row first mounts, so later rebuilds never replay it.
+class EnterOnce extends StatelessWidget {
+  final bool animate;
+  final Widget child;
 
-  const AnimatedCounter({
-    super.key,
-    required this.value,
-    this.style,
-    this.prefix = '',
-    this.suffix = '',
-    this.duration = const Duration(milliseconds: 250),
-  });
+  const EnterOnce({super.key, required this.animate, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    // Tabular digits so the width holds steady while it counts.
-    final tabular = (style ?? const TextStyle()).copyWith(
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
+    final rise = MediaQuery.disableAnimationsOf(context) ? 0.0 : 8.0;
     return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: value),
-      duration: MediaQuery.disableAnimationsOf(context)
-          ? Duration.zero
-          : duration,
+      // begin is only used on the first build; the end never changes.
+      tween: Tween(begin: animate ? 0 : 1, end: 1),
+      duration: const Duration(milliseconds: 200),
       curve: kEaseOut,
-      builder: (context, val, child) {
-        return Text('$prefix${val.toStringAsFixed(2)}$suffix', style: tabular);
-      },
+      builder: (context, v, child) => Opacity(
+        opacity: v,
+        child: Transform.translate(
+          offset: Offset(0, (1 - v) * rise),
+          child: child,
+        ),
+      ),
+      child: child,
     );
   }
 }
@@ -245,7 +237,7 @@ class SwipeToDelete extends StatelessWidget {
   }
 }
 
-// Slide page transition
+// Screen that rises from the bottom (add/edit expense)
 class SlidePageTransition extends PageRouteBuilder {
   final Widget page;
 
@@ -254,13 +246,17 @@ class SlidePageTransition extends PageRouteBuilder {
         pageBuilder: (context, animation, secondaryAnimation) => page,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           if (MediaQuery.disableAnimationsOf(context)) return child;
-          final tween = Tween<Offset>(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).chain(CurveTween(curve: kEaseOut));
-
+          // Rises from the + button like a sheet. The flipped reverse curve
+          // makes closing start fast instead of replaying ease-out backwards.
           return SlideTransition(
-            position: animation.drive(tween),
+            position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+                .animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: kEaseDrawer,
+                    reverseCurve: kEaseDrawer.flipped,
+                  ),
+                ),
             child: child,
           );
         },

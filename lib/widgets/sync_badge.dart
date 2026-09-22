@@ -33,7 +33,9 @@ class _SyncBadgeState extends State<SyncBadge> {
           ),
           SyncStatus.offline => ('OFFLINE', Icons.cloud_off_rounded, kWhite),
         };
-        return Semantics(
+        final reduce = MediaQuery.disableAnimationsOf(context);
+        final badge = Semantics(
+          key: ValueKey(snapshot.data),
           label: 'Sync status: ${label.toLowerCase()}',
           excludeSemantics: true,
           child: Container(
@@ -60,6 +62,23 @@ class _SyncBadgeState extends State<SyncBadge> {
               ],
             ),
           ),
+        );
+        // Crossfade the status change instead of swapping instantly;
+        // reduced motion keeps the fade and drops the scale.
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          switchInCurve: kEaseOut,
+          switchOutCurve: kEaseOut,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: reduce
+                ? child
+                : ScaleTransition(
+                    scale: Tween(begin: 0.95, end: 1.0).animate(animation),
+                    child: child,
+                  ),
+          ),
+          child: badge,
         );
       },
     );

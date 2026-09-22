@@ -12,22 +12,22 @@ import '../models/expense.dart';
 /// each device schedules its own notifications (like the PIN).
 class ReminderSettings {
   final bool enabled;
-  final TimeOfDay time;
 
-  /// Remind once this many days pass without an expense.
-  final int everyDays;
+  /// Daily check-in times, e.g. arriving at the office, after lunch, home.
+  final List<TimeOfDay> times;
 
-  const ReminderSettings({
-    this.enabled = false,
-    this.time = const TimeOfDay(hour: 20, minute: 0),
-    this.everyDays = 1,
-  });
+  const ReminderSettings({this.enabled = false, this.times = defaultTimes});
 
-  ReminderSettings copyWith({bool? enabled, TimeOfDay? time, int? everyDays}) =>
+  static const defaultTimes = [
+    TimeOfDay(hour: 10, minute: 0),
+    TimeOfDay(hour: 14, minute: 0),
+    TimeOfDay(hour: 19, minute: 0),
+  ];
+
+  ReminderSettings copyWith({bool? enabled, List<TimeOfDay>? times}) =>
       ReminderSettings(
         enabled: enabled ?? this.enabled,
-        time: time ?? this.time,
-        everyDays: everyDays ?? this.everyDays,
+        times: times ?? this.times,
       );
 }
 
@@ -35,30 +35,45 @@ DateTime? newestExpenseDate(Iterable<Expense> expenses) => expenses.isEmpty
     ? null
     : expenses.map((e) => e.date).reduce((a, b) => a.isAfter(b) ? a : b);
 
-/// When to remind, given the newest expense date.
+/// Check-ins to notify for, over the next [days] days.
 ///
-/// The first reminder is [everyDays] after the day of [lastExpense] at [time]
-/// (or today at [time] with no expenses). If that moment has already passed,
-/// it moves to the next [time] from [now]. Further reminders follow every
-/// [everyDays] in case the app isn't opened in between.
+/// A check-in is skipped if something was logged in the second half of the
+/// gap since the previous check-in — i.e. you already logged "for" it. A log
+/// right after the previous check-in counts as answering that one instead, so
+/// logging at 19:30 doesn't silence tomorrow's 10:00, and logging at 11:00
+/// doesn't silence the 14:00 lunch check-in.
+///
+/// Only [lastExpense] up to now is known, so this mostly decides the very next
+/// check-in; later ones are rescheduled whenever the expenses change.
 List<DateTime> reminderTimes({
   required DateTime? lastExpense,
   required DateTime now,
-  required TimeOfDay time,
-  required int everyDays,
-  int count = 4,
+  required List<TimeOfDay> times,
+  int days = 3,
 }) {
+  if (times.isEmpty) return const [];
+  final daily = [...times]
+    ..sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
   // DateTime(y, m, d + n) normalizes month ends and keeps wall-clock time
   // across DST changes, unlike adding a Duration.
-  DateTime at(DateTime day, int plusDays) =>
-      DateTime(day.year, day.month, day.day + plusDays, time.hour, time.minute);
-
-  var next = lastExpense == null ? at(now, 0) : at(lastExpense, everyDays);
-  while (!next.isAfter(now)) {
-    next = at(next, 1);
-  }
-  return [for (var i = 0; i < count; i++) at(next, i * everyDays)];
+  final slots = [
+    for (var d = -1; d <= days; d++)
+      for (final t in daily)
+        DateTime(now.year, now.month, now.day + d, t.hour, t.minute),
+  ];
+  final horizon = DateTime(now.year, now.month, now.day + days, 23, 59);
+  return [
+    for (var i = 1; i < slots.length; i++)
+      if (slots[i].isAfter(now) &&
+          !slots[i].isAfter(horizon) &&
+          (lastExpense == null ||
+              !lastExpense.isAfter(_midpoint(slots[i - 1], slots[i]))))
+        slots[i],
+  ];
 }
+
+DateTime _midpoint(DateTime a, DateTime b) =>
+    a.add(Duration(microseconds: b.difference(a).inMicroseconds ~/ 2));
 
 class ReminderService {
   static final ReminderService instance = ReminderService._();
@@ -66,10 +81,13 @@ class ReminderService {
   ReminderService._();
 
   static const _kEnabled = 'reminder_enabled';
-  static const _kMinutes = 'reminder_minutes'; // minutes after midnight
-  static const _kEveryDays = 'reminder_every_days';
+  static const _kTimes = 'reminder_times'; // minutes after midnight
   static const _firstId = 100;
-  static const _count = 4;
+
+  /// Upper bound of scheduled check-ins: 5 times a day over [_days] + 1 days.
+  /// Well under iOS's 64 pending notifications.
+  static const _days = 3;
+  static const _maxScheduled = 5 * (_days + 1);
 
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
@@ -101,11 +119,15 @@ class ReminderService {
 
   Future<ReminderSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
-    final minutes = prefs.getInt(_kMinutes) ?? 20 * 60;
+    final stored = prefs.getStringList(_kTimes);
     return ReminderSettings(
       enabled: prefs.getBool(_kEnabled) ?? false,
-      time: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
-      everyDays: prefs.getInt(_kEveryDays) ?? 1,
+      times: stored == null
+          ? ReminderSettings.defaultTimes
+          : [
+              for (final m in stored.map(int.parse))
+                TimeOfDay(hour: m ~/ 60, minute: m % 60),
+            ],
     );
   }
 
@@ -117,11 +139,9 @@ class ReminderService {
     final effective = granted ? settings : settings.copyWith(enabled: false);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kEnabled, effective.enabled);
-    await prefs.setInt(
-      _kMinutes,
-      effective.time.hour * 60 + effective.time.minute,
-    );
-    await prefs.setInt(_kEveryDays, effective.everyDays);
+    await prefs.setStringList(_kTimes, [
+      for (final t in effective.times) '${t.hour * 60 + t.minute}',
+    ]);
     await _reschedule();
     return granted;
   }
@@ -161,7 +181,7 @@ class ReminderService {
     // Wait for the expense list: scheduling from "no expenses" before the
     // first snapshot arrives would fire a reminder for a user who has some.
     if (!_ready || !_hasExpenseData) return;
-    for (var i = 0; i < _count; i++) {
+    for (var i = 0; i < _maxScheduled; i++) {
       await _plugin.cancel(id: _firstId + i);
     }
     final settings = await load();
@@ -170,24 +190,21 @@ class ReminderService {
     final times = reminderTimes(
       lastExpense: _lastExpense,
       now: DateTime.now(),
-      time: settings.time,
-      everyDays: settings.everyDays,
-      count: _count,
-    );
-    final body = settings.everyDays == 1
-        ? 'Nothing logged today. Anything to add?'
-        : 'No expenses in ${settings.everyDays} days. Anything to add?';
+      times: settings.times,
+      days: _days,
+    ).take(_maxScheduled).toList();
     for (var i = 0; i < times.length; i++) {
       await _plugin.zonedSchedule(
         id: _firstId + i,
         title: 'LEDGER',
-        body: body,
+        body: 'Spent anything? Nothing logged since your last check-in.',
         scheduledDate: tz.TZDateTime.from(times[i], tz.local),
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'expense_reminders',
             'Expense reminders',
-            channelDescription: 'Reminds you when no expense has been logged',
+            channelDescription:
+                'Check-in reminders when nothing has been logged',
           ),
           iOS: DarwinNotificationDetails(),
         ),

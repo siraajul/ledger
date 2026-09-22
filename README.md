@@ -35,7 +35,7 @@ phone and tablet. The UI is loud on purpose, and a PIN sits in front of anything
 | **Today / Week / Month / All** | Filter the total without refetching — the bloc holds the full list and derives each view |
 | **Category breakdown** | Bar chart plus percentage rows for the current calendar month |
 | **Monthly budget** | Set during onboarding, editable from the options sheet |
-| **Log reminder** | A notification when nothing's been logged for 1, 2, 3, or 7 days, at a time you pick (per device) |
+| **Check-in reminders** | Daily nudges at times you pick (default 10:00, 14:00, 19:00), skipped when you've just logged (per device) |
 | **PIN lock** | Gates edit, delete, rename, budget changes, and clear-all (per device) |
 | **Swipe to delete** | With a confirm dialog *and* the PIN check before the row leaves |
 | **Thick black borders, hard shadows, zero rounded corners** | Neo-brutalism, applied consistently through one theme file |
@@ -182,7 +182,7 @@ Firestore directly.
 | Expenses | Firestore `users/{uid}/expenses/{id}` | `ExpenseRepository` → `ExpenseBloc` |
 | Name, budget, onboarding flag | Firestore `users/{uid}` | `SettingsRepository` → `SettingsBloc` |
 | PIN | `SharedPreferences` (this device only) | `PinDialog` |
-| Reminder on/off, time, interval | `SharedPreferences` (this device only) | `ReminderService` |
+| Reminder on/off, check-in times | `SharedPreferences` (this device only) | `ReminderService` |
 | Legacy expenses (pre-sync builds) | SQLite via `sqflite` | read once for migration |
 
 [`firestore.rules`](firestore.rules) restricts every document to its owner and validates fields,
@@ -237,7 +237,7 @@ flutter test
 | --- | --- |
 | `test/expense_state_test.dart` | Filtering and totals — what every screen displays |
 | `test/widget_test.dart` | Onboarding routing, and `SettingsBloc` write coalescing / local-edit precedence against an in-memory repository |
-| `test/reminder_test.dart` | When the log reminder fires: interval, overdue, month end, no expenses |
+| `test/reminder_test.dart` | Which check-ins fire or are skipped, relative to your last log |
 | `test/sync_status_test.dart` | SYNCED / SYNCING / OFFLINE badge rules |
 | `test/drawer_initials_test.dart` | Drawer initials with stray whitespace (a release-only blank drawer) |
 
@@ -283,8 +283,9 @@ override with `BUILD_NUMBER=…`), and uploads it with the latest commit as rele
 - **The PIN stays on the device.** It is a convenience lock stored in plain `SharedPreferences`,
   not encryption, and it does not sync — set it on each device.
 - **Reminders are local notifications**, scheduled on each device — no server or push service.
-  The next one is recalculated whenever your expenses change, including expenses logged on another
-  device once this app next opens.
+  A check-in is skipped if you logged in the second half of the gap before it (so a 19:30 log at
+  home doesn't silence the next morning's 10:00). They're recalculated whenever your expenses
+  change, including expenses logged on another device once this app next opens.
 - There is no analytics or crash reporting.
 
 ---

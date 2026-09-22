@@ -5,10 +5,12 @@ import '../services/reminder_service.dart';
 import '../theme.dart';
 import 'brutal_widgets.dart';
 
-const _intervals = [1, 2, 3, 7];
+const _maxTimes = 5;
 
-/// Lets the user turn the "no expense logged" reminder on/off and pick its
-/// time and interval. Saving asks for notification permission if needed.
+int _minutes(TimeOfDay t) => t.hour * 60 + t.minute;
+
+/// Lets the user turn check-in reminders on/off and edit the daily times.
+/// Saving asks for notification permission if needed.
 Future<void> showReminderDialog(BuildContext context) async {
   final service = ReminderService.instance;
   var settings = await service.load();
@@ -17,125 +19,137 @@ Future<void> showReminderDialog(BuildContext context) async {
   await showDialog<void>(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
-      builder: (context, setState) => brutalDialog(
-        title: 'REMINDER',
-        titleStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              activeThumbColor: kBlack,
-              activeTrackColor: kGreen,
-              title: const Text(
-                'REMIND ME TO LOG',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-              ),
-              value: settings.enabled,
-              onChanged: (v) =>
-                  setState(() => settings = settings.copyWith(enabled: v)),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'IF NOTHING LOGGED FOR',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+      builder: (context, setState) {
+        final times = [...settings.times]
+          ..sort((a, b) => _minutes(a) - _minutes(b));
+
+        Future<void> pick({TimeOfDay? replacing}) async {
+          final picked = await showTimePicker(
+            context: context,
+            initialTime: replacing ?? const TimeOfDay(hour: 12, minute: 0),
+          );
+          if (picked == null) return;
+          final next = [
+            for (final t in times)
+              if (t != replacing) t,
+          ];
+          if (!next.any((t) => _minutes(t) == _minutes(picked))) {
+            next.add(picked);
+          }
+          setState(() => settings = settings.copyWith(times: next));
+        }
+
+        return brutalDialog(
+          title: 'CHECK-IN REMINDERS',
+          titleStyle: const TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 16,
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final days in _intervals)
-                  ChoiceChip(
-                    label: Text(days == 1 ? '1 DAY' : '$days DAYS'),
-                    labelStyle: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: kBlack,
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  activeThumbColor: kBlack,
+                  activeTrackColor: kGreen,
+                  title: const Text(
+                    'REMIND ME TO LOG',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                  ),
+                  value: settings.enabled,
+                  onChanged: (v) =>
+                      setState(() => settings = settings.copyWith(enabled: v)),
+                ),
+                const Text(
+                  'SKIPPED IF YOU ALREADY LOGGED SHORTLY BEFORE',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                for (final t in times)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: BrutalDialogButton(
+                            label: t.format(context),
+                            color: settings.enabled ? kBlue : kWhite,
+                            onTap: () {
+                              if (settings.enabled) pick(replacing: t);
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Remove ${t.format(context)}',
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: settings.enabled && times.length > 1
+                              ? () => setState(
+                                  () => settings = settings.copyWith(
+                                    times: [
+                                      for (final x in times)
+                                        if (x != t) x,
+                                    ],
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ],
                     ),
-                    selected: settings.everyDays == days,
-                    selectedColor: kYellow,
-                    backgroundColor: kWhite,
-                    showCheckmark: false,
-                    shape: const RoundedRectangleBorder(
-                      side: BorderSide(color: kBlack, width: 2),
-                    ),
-                    onSelected: settings.enabled
-                        ? (_) => setState(
-                            () => settings = settings.copyWith(everyDays: days),
-                          )
-                        : null,
+                  ),
+                if (times.length < _maxTimes)
+                  BrutalDialogButton(
+                    label: '+ ADD TIME',
+                    color: kWhite,
+                    onTap: () {
+                      if (settings.enabled) pick();
+                    },
                   ),
               ],
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'AT',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 8),
+          ),
+          actions: [
             BrutalDialogButton(
-              label: settings.time.format(context),
-              color: settings.enabled ? kBlue : kWhite,
+              label: 'CANCEL',
+              color: kWhite,
+              fillOnPress: true,
+              onTap: () => Navigator.pop(dialogContext),
+            ),
+            BrutalDialogButton(
+              label: 'SAVE',
+              color: kGreen,
+              fillOnPress: true,
               onTap: () async {
-                if (!settings.enabled) return;
-                final picked = await showTimePicker(
-                  context: context,
-                  initialTime: settings.time,
-                );
-                if (picked != null) {
-                  setState(() => settings = settings.copyWith(time: picked));
+                HapticFeedback.heavyImpact();
+                final navigator = Navigator.of(dialogContext);
+                final messenger = ScaffoldMessenger.maybeOf(dialogContext);
+                final granted = await service.save(settings);
+                navigator.pop();
+                if (!granted) {
+                  messenger?.showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'NOTIFICATIONS ARE OFF FOR LEDGER — ENABLE THEM IN SETTINGS',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      backgroundColor: kBlack,
+                    ),
+                  );
                 }
               },
             ),
           ],
-        ),
-        actions: [
-          BrutalDialogButton(
-            label: 'CANCEL',
-            color: kWhite,
-            fillOnPress: true,
-            onTap: () => Navigator.pop(dialogContext),
-          ),
-          BrutalDialogButton(
-            label: 'SAVE',
-            color: kGreen,
-            fillOnPress: true,
-            onTap: () async {
-              HapticFeedback.heavyImpact();
-              final navigator = Navigator.of(dialogContext);
-              final messenger = ScaffoldMessenger.maybeOf(dialogContext);
-              final granted = await service.save(settings);
-              navigator.pop();
-              if (!granted) {
-                messenger?.showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'NOTIFICATIONS ARE OFF FOR LEDGER — ENABLE THEM IN SETTINGS',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    backgroundColor: kBlack,
-                  ),
-                );
-              }
-            },
-          ),
-        ],
-      ),
+        );
+      },
     ),
   );
 }

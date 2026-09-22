@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'reminder_service.dart';
+
 /// Runs the Google sign-in flow and exchanges the result for a Firebase session.
 ///
 /// Throws [GoogleSignInException] (code `canceled` when the user backs out) or
@@ -20,6 +22,7 @@ Future<UserCredential> signInWithGoogle() async {
 }
 
 Future<void> signOut() async {
+  await ReminderService.instance.cancelAll();
   await GoogleSignIn.instance.signOut();
   await FirebaseAuth.instance.signOut();
 }

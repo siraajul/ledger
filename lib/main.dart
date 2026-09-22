@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'app.dart';
 import 'firebase_options.dart';
+import 'services/reminder_service.dart';
 import 'theme.dart';
 
 // Re-exported so existing imports of 'main.dart' keep working.
@@ -19,6 +20,7 @@ Future<void> main() async {
   await GoogleSignIn.instance.initialize(
     serverClientId: '770523884423-kf3t5fvgvg37aae1tniclh93qn2dd62s.apps.googleusercontent.com',
   );
+  await ReminderService.instance.init();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: kBg,

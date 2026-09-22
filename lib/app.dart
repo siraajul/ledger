@@ -4,12 +4,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'bloc/expense/expense_bloc.dart';
 import 'bloc/expense/expense_event.dart';
+import 'bloc/expense/expense_state.dart';
 import 'bloc/settings/settings_bloc.dart';
 import 'bloc/settings/settings_event.dart';
 import 'bloc/settings/settings_state.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/onboarding_screen.dart';
+import 'services/reminder_service.dart';
 import 'theme.dart';
 
 /// Gates the whole app behind a Firebase (Google) session.
@@ -47,7 +49,15 @@ class ExpenseTrackerApp extends StatelessWidget {
               create: (_) => ExpenseBloc()..add(const LoadExpenses()),
             ),
           ],
-          child: app,
+          // Keeps the "no expense logged" reminder in step with the data,
+          // including expenses logged on other devices.
+          child: BlocListener<ExpenseBloc, ExpenseState>(
+            listenWhen: (a, b) =>
+                b.status == ExpenseStatus.loaded && a.all != b.all,
+            listener: (context, state) => ReminderService.instance
+                .onExpensesChanged(newestExpenseDate(state.all)),
+            child: app,
+          ),
         );
       },
     );

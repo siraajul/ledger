@@ -35,6 +35,7 @@ phone and tablet. The UI is loud on purpose, and a PIN sits in front of anything
 | **Today / Week / Month / All** | Filter the total without refetching — the bloc holds the full list and derives each view |
 | **Category breakdown** | Bar chart plus percentage rows for the current calendar month |
 | **Monthly budget** | Set during onboarding, editable from the options sheet |
+| **Log reminder** | A notification when nothing's been logged for 1, 2, 3, or 7 days, at a time you pick (per device) |
 | **PIN lock** | Gates edit, delete, rename, budget changes, and clear-all (per device) |
 | **Swipe to delete** | With a confirm dialog *and* the PIN check before the row leaves |
 | **Thick black borders, hard shadows, zero rounded corners** | Neo-brutalism, applied consistently through one theme file |
@@ -181,6 +182,7 @@ Firestore directly.
 | Expenses | Firestore `users/{uid}/expenses/{id}` | `ExpenseRepository` → `ExpenseBloc` |
 | Name, budget, onboarding flag | Firestore `users/{uid}` | `SettingsRepository` → `SettingsBloc` |
 | PIN | `SharedPreferences` (this device only) | `PinDialog` |
+| Reminder on/off, time, interval | `SharedPreferences` (this device only) | `ReminderService` |
 | Legacy expenses (pre-sync builds) | SQLite via `sqflite` | read once for migration |
 
 [`firestore.rules`](firestore.rules) restricts every document to its owner and validates fields,
@@ -204,7 +206,9 @@ lib/
 │   ├── expense_repository.dart # Firestore expenses + legacy SQLite migration
 │   ├── settings_repository.dart# Firestore users/{uid} + legacy prefs migration
 │   └── database_helper.dart    # legacy SQLite, read-only for migration
-├── services/auth.dart          # Google sign-in / sign-out
+├── services/
+│   ├── auth.dart               # Google sign-in / sign-out
+│   └── reminder_service.dart   # schedules the "nothing logged" local notification
 ├── screens/
 │   ├── login_screen.dart
 │   ├── main_shell.dart         # drawer · tabs · FAB · bottom nav
@@ -233,6 +237,8 @@ flutter test
 | --- | --- |
 | `test/expense_state_test.dart` | Filtering and totals — what every screen displays |
 | `test/widget_test.dart` | Onboarding routing, and `SettingsBloc` write coalescing / local-edit precedence against an in-memory repository |
+| `test/reminder_test.dart` | When the log reminder fires: interval, overdue, month end, no expenses |
+| `test/sync_status_test.dart` | SYNCED / SYNCING / OFFLINE badge rules |
 | `test/drawer_initials_test.dart` | Drawer initials with stray whitespace (a release-only blank drawer) |
 
 The unit and widget tests need no Firebase: the bloc tests use a fake repository.
@@ -276,6 +282,9 @@ override with `BUILD_NUMBER=…`), and uploads it with the latest commit as rele
 - **CLEAR ALL DATA deletes your expenses from the cloud**, on every device. It cannot be undone.
 - **The PIN stays on the device.** It is a convenience lock stored in plain `SharedPreferences`,
   not encryption, and it does not sync — set it on each device.
+- **Reminders are local notifications**, scheduled on each device — no server or push service.
+  The next one is recalculated whenever your expenses change, including expenses logged on another
+  device once this app next opens.
 - There is no analytics or crash reporting.
 
 ---

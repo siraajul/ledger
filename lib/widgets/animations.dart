@@ -1,35 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// Animated number that counts up/down
-class AnimatedCounter extends StatelessWidget {
-  final double value;
-  final TextStyle? style;
-  final String prefix;
-  final String suffix;
-  final Duration duration;
+import '../theme.dart';
+import 'brutal_widgets.dart';
 
-  const AnimatedCounter({
-    super.key,
-    required this.value,
-    this.style,
-    this.prefix = '',
-    this.suffix = '',
-    this.duration = const Duration(milliseconds: 800),
-  });
+/// Fades a newly added row in with a short rise. [animate] is read only
+/// when the row first mounts, so later rebuilds never replay it.
+class EnterOnce extends StatelessWidget {
+  final bool animate;
+  final Widget child;
+
+  const EnterOnce({super.key, required this.animate, required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final rise = MediaQuery.disableAnimationsOf(context) ? 0.0 : 8.0;
     return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: value),
-      duration: duration,
-      curve: Curves.easeOutCubic,
-      builder: (context, val, child) {
-        return Text(
-          '$prefix${val.toStringAsFixed(2)}$suffix',
-          style: style,
-        );
-      },
+      // begin is only used on the first build; the end never changes.
+      tween: Tween(begin: animate ? 0 : 1, end: 1),
+      duration: const Duration(milliseconds: 200),
+      curve: kEaseOut,
+      builder: (context, v, child) => Opacity(
+        opacity: v,
+        child: Transform.translate(
+          offset: Offset(0, (1 - v) * rise),
+          child: child,
+        ),
+      ),
+      child: child,
     );
   }
 }
@@ -46,17 +44,19 @@ class StaggeredAnimation extends StatelessWidget {
     super.key,
     required this.index,
     required this.child,
-    this.delay = const Duration(milliseconds: 60),
-    this.duration = const Duration(milliseconds: 400),
-    this.offset = const Offset(0, 0.3),
+    this.delay = const Duration(milliseconds: 40),
+    this.duration = const Duration(milliseconds: 250),
+    this.offset = const Offset(0, 0.08),
   });
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    // Capped: rows built later by scrolling must not wait longer and longer.
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
-      duration: duration + (delay * index),
-      curve: Curves.easeOutCubic,
+      duration: duration + (delay * index.clamp(0, 4)),
+      curve: kEaseOut,
       builder: (context, val, child) {
         return Opacity(
           opacity: val,
@@ -101,13 +101,11 @@ class _AnimatedBarState extends State<AnimatedBar>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    _animation = Tween<double>(begin: 0, end: widget.ratio).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    _animation = Tween<double>(
+      begin: 0,
+      end: widget.ratio,
+    ).animate(CurvedAnimation(parent: _controller, curve: kEaseOut));
     _controller.forward();
   }
 
@@ -118,9 +116,7 @@ class _AnimatedBarState extends State<AnimatedBar>
       _animation = Tween<double>(
         begin: _animation.value,
         end: widget.ratio,
-      ).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-      );
+      ).animate(CurvedAnimation(parent: _controller, curve: kEaseOut));
       _controller
         ..reset()
         ..forward();
@@ -135,8 +131,9 @@ class _AnimatedBarState extends State<AnimatedBar>
 
   @override
   Widget build(BuildContext context) {
+    final reduce = MediaQuery.disableAnimationsOf(context);
     return AnimatedBuilder(
-      animation: _animation,
+      animation: reduce ? kAlwaysCompleteAnimation : _animation,
       builder: (context, child) {
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -144,13 +141,17 @@ class _AnimatedBarState extends State<AnimatedBar>
               height: widget.height,
               width: constraints.maxWidth,
               decoration: const BoxDecoration(
-                border: Border.fromBorderSide(BorderSide(color: Color(0xFF1A1A1A), width: 2)),
+                border: Border.fromBorderSide(
+                  BorderSide(color: Color(0xFF1A1A1A), width: 2),
+                ),
               ),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Container(
                   height: widget.height,
-                  width: constraints.maxWidth * _animation.value,
+                  width:
+                      constraints.maxWidth *
+                      (reduce ? widget.ratio : _animation.value),
                   color: widget.color,
                 ),
               ),
@@ -171,17 +172,17 @@ class SlideToDeleteBackground extends StatelessWidget {
     return Container(
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.only(right: 20),
-      color: const Color(0xFFFF6B9D),
+      color: kPink,
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.delete, color: Colors.white, size: 28),
+          Icon(Icons.delete, color: kBlack, size: 28),
           SizedBox(height: 4),
           Text(
             'DELETE',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 10,
+              color: kBlack,
+              fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 1,
             ),
@@ -206,7 +207,7 @@ class SwipeToDelete extends StatelessWidget {
     super.key,
     required this.child,
     required this.onDismissed,
-    this.confirmMessage = 'DELETE?',
+    this.confirmMessage = 'DELETE THIS EXPENSE?',
     this.beforeDismiss,
   });
 
@@ -218,33 +219,13 @@ class SwipeToDelete extends StatelessWidget {
       background: const SlideToDeleteBackground(),
       confirmDismiss: (direction) async {
         HapticFeedback.heavyImpact();
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: Colors.white,
-            shape: const RoundedRectangleBorder(
-              side: BorderSide(color: Color(0xFF1A1A1A), width: 3),
-            ),
-            title: Text(
-              confirmMessage,
-              style: const TextStyle(fontWeight: FontWeight.w900),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('CANCEL'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                  'DELETE',
-                  style: TextStyle(color: Color(0xFFFF6B9D)),
-                ),
-              ),
-            ],
-          ),
+        final confirmed = await showBrutalConfirm(
+          context,
+          title: confirmMessage,
+          confirmLabel: 'DELETE EXPENSE',
+          color: kPink,
         );
-        if (confirmed != true) return false;
+        if (!confirmed) return false;
         return await beforeDismiss?.call() ?? true;
       },
       onDismissed: (direction) {
@@ -256,69 +237,30 @@ class SwipeToDelete extends StatelessWidget {
   }
 }
 
-// Pulse animation for attention
-class PulseAnimation extends StatefulWidget {
-  final Widget child;
-  final Duration duration;
-
-  const PulseAnimation({
-    super.key,
-    required this.child,
-    this.duration = const Duration(milliseconds: 1500),
-  });
-
-  @override
-  State<PulseAnimation> createState() => _PulseAnimationState();
-}
-
-class _PulseAnimationState extends State<PulseAnimation>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: Tween<double>(begin: 1.0, end: 1.05).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-      ),
-      child: widget.child,
-    );
-  }
-}
-
-// Slide page transition
+// Screen that rises from the bottom (add/edit expense)
 class SlidePageTransition extends PageRouteBuilder {
   final Widget page;
 
   SlidePageTransition({required this.page})
-      : super(
-          pageBuilder: (context, animation, secondaryAnimation) => page,
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final tween = Tween<Offset>(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).chain(CurveTween(curve: Curves.easeOutCubic));
-
-            return SlideTransition(
-              position: animation.drive(tween),
-              child: child,
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 400),
-        );
+    : super(
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          if (MediaQuery.disableAnimationsOf(context)) return child;
+          // Rises from the + button like a sheet. The flipped reverse curve
+          // makes closing start fast instead of replaying ease-out backwards.
+          return SlideTransition(
+            position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+                .animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: kEaseDrawer,
+                    reverseCurve: kEaseDrawer.flipped,
+                  ),
+                ),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 280),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+      );
 }

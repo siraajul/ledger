@@ -4,11 +4,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/settings/settings_bloc.dart';
 import '../bloc/settings/settings_event.dart';
 import '../theme.dart';
+import '../widgets/brutal_widgets.dart';
 
 class NamePageContent extends StatefulWidget {
   final VoidCallback onNext;
   final ValueChanged<String>? onNameChanged;
-  const NamePageContent({super.key, required this.onNext, this.onNameChanged});
+  final String? error;
+  const NamePageContent({
+    super.key,
+    required this.onNext,
+    this.onNameChanged,
+    this.error,
+  });
 
   @override
   State<NamePageContent> createState() => _NamePageContentState();
@@ -42,50 +49,77 @@ class _NamePageContentState extends State<NamePageContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 60),
-            const Text(
-              "WHAT'S\nYOUR\nNAME?",
-              style: TextStyle(
-                fontSize: 38,
-                fontWeight: FontWeight.w900,
-                color: kBlack,
-                height: 1.0,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Container(
-              decoration: const BoxDecoration(
-                color: kWhite,
-                border: Border.fromBorderSide(
-                  BorderSide(color: kBlack, width: 3),
-                ),
-                boxShadow: [BoxShadow(offset: Offset(3, 3), color: kBlack)],
-              ),
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                textCapitalization: TextCapitalization.words,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: kBlack,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'TYPE HERE...',
-                  hintStyle: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[300],
+            // Merged so the heading is the field's accessible name.
+            MergeSemantics(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "WHAT'S\nYOUR\nNAME?",
+                    style: TextStyle(
+                      fontSize: 38,
+                      fontWeight: FontWeight.w900,
+                      color: kBlack,
+                      height: 1.0,
+                    ),
                   ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(16),
-                ),
-                onChanged: (value) {
-                  context.read<SettingsBloc>().add(UserNameChanged(value));
-                  widget.onNameChanged?.call(value);
-                },
+                  const SizedBox(height: 32),
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: kWhite,
+                      border: Border.fromBorderSide(
+                        BorderSide(color: kBlack, width: 3),
+                      ),
+                      boxShadow: [
+                        BoxShadow(offset: Offset(3, 3), color: kBlack),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      textCapitalization: TextCapitalization.words,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: kBlack,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'TYPE HERE...',
+                        hintStyle: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[300],
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                      onChanged: (value) {
+                        context.read<SettingsBloc>().add(
+                          UserNameChanged(value),
+                        );
+                        widget.onNameChanged?.call(value);
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 12),
+            if (widget.error != null) ...[
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  widget.error!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: kDangerText,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             if (_controller.text.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -151,53 +185,64 @@ class _BudgetPageContentState extends State<BudgetPageContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 60),
-            const Text(
-              'MONTHLY\nBUDGET?',
-              style: TextStyle(
-                fontSize: 38,
-                fontWeight: FontWeight.w900,
-                color: kBlack,
-                height: 1.0,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Container(
-              decoration: const BoxDecoration(
-                color: kWhite,
-                border: Border.fromBorderSide(
-                  BorderSide(color: kBlack, width: 3),
-                ),
-                boxShadow: [BoxShadow(offset: Offset(3, 3), color: kBlack)],
-              ),
-              child: TextField(
-                controller: _controller,
-                keyboardType: TextInputType.number,
-                style: const TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w900,
-                  color: kBlack,
-                ),
-                decoration: InputDecoration(
-                  prefixText: '$kCurrency ',
-                  prefixStyle: const TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.grey,
+            MergeSemantics(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'MONTHLY\nBUDGET?',
+                    style: TextStyle(
+                      fontSize: 38,
+                      fontWeight: FontWeight.w900,
+                      color: kBlack,
+                      height: 1.0,
+                    ),
                   ),
-                  border: InputBorder.none,
-                  hintText: '0',
-                  hintStyle: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.grey[200],
+                  const SizedBox(height: 32),
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: kWhite,
+                      border: Border.fromBorderSide(
+                        BorderSide(color: kBlack, width: 3),
+                      ),
+                      boxShadow: [
+                        BoxShadow(offset: Offset(3, 3), color: kBlack),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: const TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.w900,
+                        color: kBlack,
+                      ),
+                      decoration: InputDecoration(
+                        prefixText: '$kCurrency ',
+                        prefixStyle: const TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          color: kMutedText,
+                        ),
+                        border: InputBorder.none,
+                        hintText: '0',
+                        hintStyle: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.grey[200],
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                      onChanged: (value) {
+                        final val = double.tryParse(value) ?? 0;
+                        setState(() => _selected = val);
+                        widget.onBudgetChanged?.call(val);
+                      },
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.all(16),
-                ),
-                onChanged: (value) {
-                  final val = double.tryParse(value) ?? 0;
-                  setState(() => _selected = val);
-                  widget.onBudgetChanged?.call(val);
-                },
+                ],
               ),
             ),
             const SizedBox(height: 20),
@@ -206,7 +251,8 @@ class _BudgetPageContentState extends State<BudgetPageContent> {
               runSpacing: 8,
               children: _presets.map((amount) {
                 final isSelected = _selected == amount;
-                return GestureDetector(
+                return BrutalTap(
+                  selected: isSelected,
                   onTap: () {
                     _controller.text = amount.toInt().toString();
                     setState(() => _selected = amount);

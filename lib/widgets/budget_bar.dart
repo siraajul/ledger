@@ -24,34 +24,7 @@ class BudgetBar extends StatefulWidget {
   State<BudgetBar> createState() => _BudgetBarState();
 }
 
-class _BudgetBarState extends State<BudgetBar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
-  }
-
-  @override
-  void didUpdateWidget(BudgetBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.spent != widget.spent) {
-      _controller.reset();
-      _controller.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _BudgetBarState extends State<BudgetBar> {
   @override
   Widget build(BuildContext context) {
     final ratio = (widget.spent / widget.budget).clamp(0.0, 1.0);
@@ -68,52 +41,49 @@ class _BudgetBarState extends State<BudgetBar>
             Text(
               'BUDGET',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1,
-                color: widget.overBudget ? kPink : kBlack,
+                color: widget.overBudget ? kDangerText : kBlack,
               ),
             ),
+            const Spacer(),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: widget.overBudget ? kPink : kGreen,
+                color: widget.overBudget ? kDangerText : kBlack,
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            return Container(
-              height: 14,
-              width: constraints.maxWidth,
-              decoration: const BoxDecoration(
-                color: kWhite,
-                border: Border.fromBorderSide(
-                  BorderSide(color: kBlack, width: 2),
-                ),
+        Container(
+          height: 14,
+          decoration: const BoxDecoration(
+            color: kWhite,
+            border: Border.fromBorderSide(BorderSide(color: kBlack, width: 2)),
+          ),
+          // Fills from the left and retargets from wherever it is,
+          // instead of regrowing from zero on every change.
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: ratio),
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 250),
+            curve: kEaseOut,
+            builder: (context, value, _) => FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: value,
+              // Colour change: plain ease, the skill's curve for colour.
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.ease,
+                color: barColor,
               ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.0, end: 1.0).animate(
-                    CurvedAnimation(
-                      parent: _controller,
-                      curve: Curves.easeOutCubic,
-                    ),
-                  ),
-                  child: Container(
-                    height: 14,
-                    width: constraints.maxWidth * ratio,
-                    color: barColor,
-                  ),
-                ),
-              ),
-            );
-          },
+            ),
+          ),
         ),
       ],
     );

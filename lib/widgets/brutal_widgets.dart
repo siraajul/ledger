@@ -1,7 +1,88 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 
 import '../theme.dart';
+
+/// Tap target for the hand-built brutal controls: button semantics,
+/// keyboard focus with a visible ring, Enter/Space activation.
+/// [onPressedChanged] drives each control's own press visuals.
+class BrutalTap extends StatefulWidget {
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final ValueChanged<bool>? onPressedChanged;
+  final bool? selected;
+
+  /// Accessible name for icon-only controls; text children name the rest.
+  final String? label;
+  final Map<CustomSemanticsAction, VoidCallback>? semanticActions;
+  final Widget child;
+
+  const BrutalTap({
+    super.key,
+    required this.onTap,
+    required this.child,
+    this.onLongPress,
+    this.onPressedChanged,
+    this.selected,
+    this.label,
+    this.semanticActions,
+  });
+
+  @override
+  State<BrutalTap> createState() => _BrutalTapState();
+}
+
+class _BrutalTapState extends State<BrutalTap> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final onTap = widget.onTap;
+    final press = onTap == null ? null : widget.onPressedChanged;
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        enabled: onTap != null,
+        selected: widget.selected,
+        label: widget.label,
+        customSemanticsActions: widget.semanticActions,
+        child: FocusableActionDetector(
+          enabled: onTap != null,
+          actions: {
+            ActivateIntent: CallbackAction<ActivateIntent>(
+              onInvoke: (_) {
+                onTap?.call();
+                return null;
+              },
+            ),
+          },
+          onShowFocusHighlight: (v) => setState(() => _focused = v),
+          child: GestureDetector(
+            onTapDown: press == null ? null : (_) => press(true),
+            onTapUp: press == null ? null : (_) => press(false),
+            onTapCancel: press == null ? null : () => press(false),
+            onTap: onTap,
+            onLongPress: widget.onLongPress,
+            child: DecoratedBox(
+              position: DecorationPosition.foreground,
+              // Blue over the black border: 9:1 against it, so the ring
+              // reads on every fill.
+              decoration: _focused
+                  ? const BoxDecoration(
+                      border: Border.fromBorderSide(
+                        BorderSide(color: kBlue, width: 4),
+                      ),
+                    )
+                  : const BoxDecoration(),
+              child: widget.child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class BrutalButton extends StatefulWidget {
   final VoidCallback? onPressed;
@@ -32,14 +113,11 @@ class _BrutalButtonState extends State<BrutalButton>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 80),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: kPress, vsync: this);
     _downAnimation = Tween<double>(
       begin: 0,
       end: 4,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    ).animate(CurvedAnimation(parent: _controller, curve: kEaseOut));
   }
 
   @override
@@ -50,20 +128,13 @@ class _BrutalButtonState extends State<BrutalButton>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) {
-        HapticFeedback.lightImpact();
-        setState(() => _isPressed = true);
-        _controller.forward();
-      },
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        _controller.reverse();
-        widget.onPressed?.call();
-      },
-      onTapCancel: () {
-        setState(() => _isPressed = false);
-        _controller.reverse();
+    return BrutalTap(
+      onTap: widget.onPressed,
+      selected: widget.isSelected,
+      onPressedChanged: (pressed) {
+        if (pressed) HapticFeedback.lightImpact();
+        setState(() => _isPressed = pressed);
+        pressed ? _controller.forward() : _controller.reverse();
       },
       child: AnimatedBuilder(
         animation: _downAnimation,
@@ -140,14 +211,11 @@ class _BrutalCardState extends State<BrutalCard>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 80),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: kPress, vsync: this);
     _downAnimation = Tween<double>(
       begin: 0,
       end: 4,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    ).animate(CurvedAnimation(parent: _controller, curve: kEaseOut));
   }
 
   @override
@@ -232,15 +300,12 @@ class _BrutalDialogButtonState extends State<BrutalDialogButton> {
   Widget build(BuildContext context) {
     final fill = widget.fillOnPress && !_isPressed ? kWhite : widget.color;
     final text = widget.fillOnPress && _isPressed ? kWhite : kBlack;
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
+    return BrutalTap(
+      onTap: widget.onTap,
+      onPressedChanged: (pressed) => setState(() => _isPressed = pressed),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: kPress,
+        curve: kEaseOut,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: fill,

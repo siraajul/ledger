@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../widgets/animations.dart';
 import '../widgets/animated_fab.dart';
 import '../widgets/bottom_nav.dart';
@@ -18,6 +19,9 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+  // Stats is built on first visit so its entrance plays where it can be
+  // seen, instead of offstage at launch inside the IndexedStack.
+  bool _statsVisited = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void _openDrawer() {
@@ -42,7 +46,10 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _navigateToTab(int index) {
-    setState(() => _currentIndex = index);
+    setState(() {
+      _currentIndex = index;
+      if (index == 1) _statsVisited = true;
+    });
   }
 
   @override
@@ -60,10 +67,12 @@ class _MainShellState extends State<MainShell> {
         index: _currentIndex,
         children: [
           HomeScreen(onMenuTap: _openDrawer),
-          StatsScreen(
-            key: const ValueKey('stats'),
-            onMenuTap: _openDrawer,
-          ),
+          _statsVisited
+              ? StatsScreen(
+                  key: const ValueKey('stats'),
+                  onMenuTap: _openDrawer,
+                )
+              : const SizedBox.shrink(),
         ],
       ),
       floatingActionButton: AnimatedFAB(
@@ -79,7 +88,7 @@ class _MainShellState extends State<MainShell> {
         currentIndex: _currentIndex,
         onMenuTap: _openDrawer,
         onOptionsTap: _openBottomSheet,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: _navigateToTab,
       ),
     );
   }

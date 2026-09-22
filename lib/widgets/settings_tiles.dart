@@ -33,7 +33,8 @@ class _ActionCardState extends State<ActionCard> {
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: kPress,
+        curve: kEaseOut,
         padding: const EdgeInsets.symmetric(vertical: 16),
         transform: Matrix4.translationValues(0, _isPressed ? 2 : 0, 0),
         decoration: BoxDecoration(
@@ -97,7 +98,8 @@ class _SettingsTileState extends State<SettingsTile> {
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: kPress,
+        curve: kEaseOut,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         transform: Matrix4.translationValues(0, _isPressed ? 2 : 0, 0),
         decoration: BoxDecoration(

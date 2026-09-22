@@ -73,7 +73,7 @@ class _PinDialogState extends State<PinDialog> {
     } else {
       HapticFeedback.heavyImpact();
       setState(() {
-        _error = 'WRONG PIN';
+        _error = 'WRONG PIN. TRY AGAIN.';
         _controller.clear();
       });
     }
@@ -125,13 +125,16 @@ class _PinDialogState extends State<PinDialog> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 8),
-              Text(
-                _error!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: kPink,
-                  letterSpacing: 1,
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _error!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: kDangerText,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
             ],
@@ -300,13 +303,16 @@ class _SetPinDialogState extends State<SetPinDialog> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 8),
-              Text(
-                _error!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: kPink,
-                  letterSpacing: 1,
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _error!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: kDangerText,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
             ],

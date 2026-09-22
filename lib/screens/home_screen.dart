@@ -18,10 +18,20 @@ import '../widgets/sync_badge.dart';
 import '../theme.dart';
 import '../widgets/budget_bar.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final VoidCallback? onMenuTap;
 
   const HomeScreen({super.key, this.onMenuTap});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  /// Ids already on screen. Anything outside it on the next build is a
+  /// newly added expense and fades in; null until the first load, so the
+  /// initial list doesn't animate.
+  Set<String>? _known;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +42,14 @@ class HomeScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           final expenses = state.filtered;
+          final known = _known;
+          final fresh = known == null
+              ? const <String>{}
+              : {
+                  for (final e in state.all)
+                    if (!known.contains(e.id)) e.id,
+                };
+          _known = {for (final e in state.all) e.id};
           return CustomScrollView(
             slivers: [
               _buildHeader(),
@@ -43,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                 state.thisMonth,
               ),
               _buildTimeFilter(context, state.filter),
-              _buildExpenseList(context, expenses),
+              _buildExpenseList(context, expenses, fresh),
             ],
           );
         },
@@ -78,7 +96,7 @@ class HomeScreen extends StatelessWidget {
                     child: Text(
                       DateFormat('MMM d, yyyy').format(now).toUpperCase(),
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1,
                       ),
@@ -145,16 +163,16 @@ class HomeScreen extends StatelessWidget {
                 Text(
                   _getFilterLabel(filter),
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 2,
                   ),
                 ),
                 const SizedBox(height: 8),
-                AnimatedCounter(
-                  value: total,
-                  prefix: kCurrency,
+                Text(
+                  '$kCurrency${total.toStringAsFixed(2)}',
                   style: const TextStyle(
+                    fontFeatures: [FontFeature.tabularFigures()],
                     fontSize: 44,
                     fontWeight: FontWeight.w900,
                     color: kBlack,
@@ -177,7 +195,7 @@ class HomeScreen extends StatelessWidget {
                   child: Text(
                     '$count TRANSACTIONS',
                     style: const TextStyle(
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1,
                     ),
@@ -210,33 +228,36 @@ class HomeScreen extends StatelessWidget {
             children: TimeFilter.values.map((filter) {
               final isSelected = selected == filter;
               return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    context.read<ExpenseBloc>().add(FilterChanged(filter));
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    curve: Curves.easeOut,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? kBlack : kWhite,
-                      border: Border.all(color: kBlack, width: 2),
-                      boxShadow: isSelected
-                          ? []
-                          : const [
-                              BoxShadow(offset: Offset(2, 2), color: kBlack),
-                            ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        _getFilterName(filter).toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: isSelected ? kYellow : kBlack,
-                          letterSpacing: 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: BrutalTap(
+                    selected: isSelected,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      context.read<ExpenseBloc>().add(FilterChanged(filter));
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      curve: kEaseOut,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      decoration: BoxDecoration(
+                        color: isSelected ? kBlack : kWhite,
+                        border: Border.all(color: kBlack, width: 2),
+                        boxShadow: isSelected
+                            ? []
+                            : const [
+                                BoxShadow(offset: Offset(2, 2), color: kBlack),
+                              ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          _getFilterName(filter).toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: isSelected ? kYellow : kBlack,
+                            letterSpacing: 1,
+                          ),
                         ),
                       ),
                     ),
@@ -250,7 +271,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseList(BuildContext context, List<Expense> expenses) {
+  Widget _buildExpenseList(
+    BuildContext context,
+    List<Expense> expenses,
+    Set<String> fresh,
+  ) {
     if (expenses.isEmpty) {
       return SliverFillRemaining(
         child: Center(
@@ -261,22 +286,20 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  PulseAnimation(
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: const BoxDecoration(
-                        color: kWhite,
-                        border: Border.fromBorderSide(
-                          BorderSide(color: kBlack, width: 3),
-                        ),
-                        boxShadow: [
-                          BoxShadow(offset: Offset(3, 3), color: kBlack),
-                        ],
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: kWhite,
+                      border: Border.fromBorderSide(
+                        BorderSide(color: kBlack, width: 3),
                       ),
-                      child: const Center(
-                        child: Text('📦', style: TextStyle(fontSize: 36)),
-                      ),
+                      boxShadow: [
+                        BoxShadow(offset: Offset(3, 3), color: kBlack),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text('📦', style: TextStyle(fontSize: 36)),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -294,12 +317,12 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[500],
+                      color: kMutedText,
                       height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  GestureDetector(
+                  BrutalTap(
                     onTap: () {
                       HapticFeedback.mediumImpact();
                       Navigator.push(
@@ -324,7 +347,7 @@ class HomeScreen extends StatelessWidget {
                       child: const Text(
                         'ADD FIRST EXPENSE',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1,
                         ),
@@ -373,7 +396,7 @@ class HomeScreen extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: const BoxDecoration(
-                          color: kPink,
+                          color: kOrange,
                           border: Border.fromBorderSide(
                             BorderSide(color: kBlack, width: 2),
                           ),
@@ -381,7 +404,7 @@ class HomeScreen extends StatelessWidget {
                         child: Text(
                           _formatDateHeader(date).toUpperCase(),
                           style: const TextStyle(
-                            fontSize: 10,
+                            fontSize: 12,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1,
                           ),
@@ -393,6 +416,7 @@ class HomeScreen extends StatelessWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
                           color: kBlack,
+                          fontFeatures: [FontFeature.tabularFigures()],
                         ),
                       ),
                     ],
@@ -406,33 +430,36 @@ class HomeScreen extends StatelessWidget {
                     onDismissed: () => context.read<ExpenseBloc>().add(
                       ExpenseDeleted(expense.id),
                     ),
-                    child: ExpenseCard(
-                      expense: expense,
-                      onTap: () async {
-                        HapticFeedback.mediumImpact();
-                        final allowed = await PinDialog.verify(
-                          context,
-                          action: 'EDIT EXPENSE',
-                        );
-                        if (!allowed || !context.mounted) return;
-                        Navigator.push(
-                          context,
-                          SlidePageTransition(
-                            page: AddExpenseScreen(expense: expense),
-                          ),
-                        );
-                      },
-                      onDelete: () async {
-                        HapticFeedback.heavyImpact();
-                        final allowed = await _confirmDelete(
-                          context,
-                          action: 'DELETE EXPENSE',
-                        );
-                        if (!allowed || !context.mounted) return;
-                        context.read<ExpenseBloc>().add(
-                          ExpenseDeleted(expense.id),
-                        );
-                      },
+                    child: EnterOnce(
+                      animate: fresh.contains(expense.id),
+                      child: ExpenseCard(
+                        expense: expense,
+                        onTap: () async {
+                          HapticFeedback.mediumImpact();
+                          final allowed = await PinDialog.verify(
+                            context,
+                            action: 'EDIT EXPENSE',
+                          );
+                          if (!allowed || !context.mounted) return;
+                          Navigator.push(
+                            context,
+                            SlidePageTransition(
+                              page: AddExpenseScreen(expense: expense),
+                            ),
+                          );
+                        },
+                        onDelete: () async {
+                          HapticFeedback.heavyImpact();
+                          final allowed = await _confirmDelete(
+                            context,
+                            action: 'DELETE EXPENSE',
+                          );
+                          if (!allowed || !context.mounted) return;
+                          context.read<ExpenseBloc>().add(
+                            ExpenseDeleted(expense.id),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -491,8 +518,8 @@ Future<bool> _confirmDelete(
 }) async {
   final confirmed = await showBrutalConfirm(
     context,
-    title: 'DELETE?',
-    confirmLabel: 'DELETE',
+    title: 'DELETE THIS EXPENSE?',
+    confirmLabel: 'DELETE EXPENSE',
     color: kPink,
   );
   if (!confirmed || !context.mounted) return false;

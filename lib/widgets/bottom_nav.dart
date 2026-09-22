@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme.dart';
+import 'brutal_widgets.dart';
 
 class AnimatedBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -32,6 +33,7 @@ class AnimatedBottomNav extends StatelessWidget {
             children: [
               _NavIconButton(
                 icon: Icons.menu,
+                label: 'Menu',
                 isSelected: currentIndex == -1,
                 onTap: onMenuTap,
               ),
@@ -59,6 +61,7 @@ class AnimatedBottomNav extends StatelessWidget {
               ),
               _NavIconButton(
                 icon: Icons.tune,
+                label: 'Options',
                 isSelected: false,
                 onTap: onOptionsTap,
               ),
@@ -72,11 +75,13 @@ class AnimatedBottomNav extends StatelessWidget {
 
 class _NavIconButton extends StatefulWidget {
   final IconData icon;
+  final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _NavIconButton({
     required this.icon,
+    required this.label,
     required this.isSelected,
     required this.onTap,
   });
@@ -100,8 +105,8 @@ class _NavIconButtonState extends State<_NavIconButton>
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.85,
-    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeOut));
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: kEaseOut));
   }
 
   @override
@@ -112,24 +117,18 @@ class _NavIconButtonState extends State<_NavIconButton>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) {
-        _scaleController.forward();
-        setState(() => _isPressed = true);
-      },
-      onTapUp: (_) {
-        _scaleController.reverse();
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () {
-        _scaleController.reverse();
-        setState(() => _isPressed = false);
+    return BrutalTap(
+      onTap: widget.onTap,
+      label: widget.label,
+      onPressedChanged: (pressed) {
+        pressed ? _scaleController.forward() : _scaleController.reverse();
+        setState(() => _isPressed = pressed);
       },
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
+          duration: kPress,
+          curve: kEaseOut,
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: _isPressed ? kBg : Colors.transparent,
@@ -174,8 +173,8 @@ class _NavItemState extends State<_NavItem>
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.9,
-    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeOut));
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: kEaseOut));
   }
 
   @override
@@ -186,24 +185,18 @@ class _NavItemState extends State<_NavItem>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) {
-        _scaleController.forward();
-        setState(() => _isPressed = true);
-      },
-      onTapUp: (_) {
-        _scaleController.reverse();
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () {
-        _scaleController.reverse();
-        setState(() => _isPressed = false);
+    return BrutalTap(
+      onTap: widget.onTap,
+      selected: widget.isSelected,
+      onPressedChanged: (pressed) {
+        pressed ? _scaleController.forward() : _scaleController.reverse();
+        setState(() => _isPressed = pressed);
       },
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
+          curve: kEaseOut,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: widget.isSelected
               ? const BoxDecoration(
@@ -228,7 +221,7 @@ class _NavItemState extends State<_NavItem>
                 softWrap: false,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: widget.isSelected ? kYellow : kBlack,
                   letterSpacing: 1,

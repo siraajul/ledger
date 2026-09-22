@@ -13,6 +13,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const _signInError =
+      'Unable to sign in. Check your connection and try again.';
+
   bool _busy = false;
   String? _error;
 
@@ -29,11 +32,11 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _error = e.code == GoogleSignInExceptionCode.canceled
             ? null
-            : 'Sign-in failed: ${e.code.name}';
+            : _signInError;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = 'Sign-in failed. Try again.');
+      setState(() => _error = _signInError);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -78,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 2,
-                  color: Colors.grey,
+                  color: kMutedText,
                 ),
               ),
               const SizedBox(height: 40),
@@ -93,12 +96,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               if (_error != null) ...[
                 const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: kPink,
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: kDangerText,
+                    ),
                   ),
                 ),
               ],

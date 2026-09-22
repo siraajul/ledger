@@ -184,7 +184,7 @@ class StatsScreen extends StatelessWidget {
                       AnimatedBar(
                         ratio: ratio,
                         color: Color(category.color),
-                        duration: Duration(milliseconds: 600 + (index * 150)),
+                        duration: Duration(milliseconds: 250 + (index * 40)),
                       ),
                     ],
                   ),
@@ -287,7 +287,8 @@ class _CategoryRowState extends State<_CategoryRow> {
       onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: kPress,
+        curve: kEaseOut,
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         transform: Matrix4.translationValues(0, _isPressed ? 2 : 0, 0),

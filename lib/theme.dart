@@ -11,8 +11,20 @@ const kGreen = Color(0xFF00E676);
 const kOrange = Color(0xFFFF9100);
 const kPurple = Color(0xFFBB86FC);
 
+// Text-only roles. The fills above fail 4.5:1 as text on kWhite/kBg/kYellow;
+// these pass on all three. kPink stays the destructive/error *fill*.
+const kDangerText = Color(0xFFAD1457);
+const kMutedText = Color(0xFF616161);
+
 // Bengali taka sign (U+09F3); rendered by the platform's Bengali fallback font.
 const kCurrency = '৳';
+
+// One strong ease-out for all UI motion; Curves.easeOut is too soft.
+const kEaseOut = Cubic(0.23, 1, 0.32, 1);
+// iOS-like sheet curve for screens that rise from the bottom.
+const kEaseDrawer = Cubic(0.32, 0.72, 0, 1);
+// Press feedback: every pressable's fill/shadow change.
+const kPress = Duration(milliseconds: 100);
 
 const kBorder = BorderRadius.zero;
 const kShadow = BoxShadow(offset: Offset(4, 4), color: kBlack);

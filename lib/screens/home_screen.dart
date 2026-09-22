@@ -14,6 +14,7 @@ import '../widgets/brutal_widgets.dart';
 import '../widgets/expense_card.dart';
 import '../widgets/animations.dart';
 import '../widgets/pin_dialog.dart';
+import '../widgets/sync_badge.dart';
 import '../theme.dart';
 import '../widgets/budget_bar.dart';
 
@@ -61,25 +62,31 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: const BoxDecoration(
-                  color: kBlue,
-                  border: Border.fromBorderSide(
-                    BorderSide(color: kBlack, width: 2),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: kBlue,
+                      border: Border.fromBorderSide(
+                        BorderSide(color: kBlack, width: 2),
+                      ),
+                    ),
+                    child: Text(
+                      DateFormat('MMM d, yyyy').format(now).toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  DateFormat('MMM d, yyyy').format(now).toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
-                  ),
-                ),
+                  const Spacer(),
+                  const SyncBadge(),
+                ],
               ),
               const SizedBox(height: 12),
               BlocBuilder<SettingsBloc, SettingsState>(

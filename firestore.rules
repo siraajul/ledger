@@ -1,10 +1,71 @@
 rules_version = '2';
 
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Document: users/{userId}            (profile settings, owner only)
+//   - name: string (optional, <= 200 chars)
+//   - budget: number (optional, >= 0) - monthly budget
+//   - onboardingComplete: bool (optional)
+//
+// Collection: users/{userId}/expenses (owner only)
+// Document ID: the expense's own `id`
+//   - id: string (required, == document ID, immutable)
+//   - title: string (required, 1..500 chars)
+//   - amount: number (required, >= 0)
+//   - category: string (required, 1..50 chars)
+//   - date: string (required, ISO 8601)
+//   - note: string or null (optional, <= 5000 chars)
+//
+// Queries: expenses ordered by `date` (owner reading their own collection).
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // A signed-in user may only touch their own subtree.
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    // ---------------------------------------------------------------
+    // Helper Functions
+    // ---------------------------------------------------------------
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function optionalString(data, field, maxLen) {
+      return !(field in data) || (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    // ---------------------------------------------------------------
+    // Domain Validators (used on both create and update)
+    // ---------------------------------------------------------------
+    function isValidSettings(data) {
+      return data.keys().hasOnly(['name', 'budget', 'onboardingComplete'])
+        && optionalString(data, 'name', 200)
+        && (!('budget' in data) || (data.budget is number && data.budget >= 0))
+        && (!('onboardingComplete' in data) || data.onboardingComplete is bool);
+    }
+
+    function isValidExpense(data, expenseId) {
+      return data.keys().hasAll(['id', 'title', 'amount', 'category', 'date'])
+        && data.keys().hasOnly(['id', 'title', 'amount', 'category', 'date', 'note'])
+        && data.id == expenseId
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 500
+        && data.amount is number && data.amount >= 0
+        && data.category is string && data.category.size() > 0 && data.category.size() <= 50
+        && data.date is string && data.date.matches('^\\d{4}-\\d{2}-\\d{2}T.*')
+        && (!('note' in data) || data.note == null
+            || (data.note is string && data.note.size() <= 5000));
+    }
+
+    match /users/{userId} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidSettings(request.resource.data);
+
+      match /expenses/{expenseId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && isValidExpense(request.resource.data, expenseId);
+      }
     }
   }
 }

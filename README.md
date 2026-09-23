@@ -31,13 +31,16 @@ phone and tablet. The UI is loud on purpose, and a PIN sits in front of anything
 | **Google Sign-In** | One tap; your account is the only thing that can read your data |
 | **Sync across devices** | Expenses, name, budget, and onboarding state live in Firestore and update live |
 | **Offline-first** | Add and edit with no signal; changes upload when you're back online |
+| **Sync status badge** | SYNCED / SYNCING / OFFLINE on the home header, straight from Firestore snapshot metadata |
 | **Add, edit, delete, categorize** | Eight categories, dated entries, optional notes |
 | **Today / Week / Month / All** | Filter the total without refetching — the bloc holds the full list and derives each view |
 | **Category breakdown** | Bar chart plus percentage rows for the current calendar month |
 | **Monthly budget** | Set during onboarding, editable from the options sheet |
-| **Check-in reminders** | Daily nudges at times you pick (default 10:00, 14:00, 19:00), skipped when you've just logged. The wording fits the moment — morning, midday, an evening total, budget left, over budget, or a long silence |
+| **Check-in reminders** | Daily nudges at times you pick (default 10:00, 14:00, 19:00), skipped when you've just logged. The wording fits the moment — morning, midday, an evening total, budget left, over budget, or a long silence. A preview button fires one sample of each |
 | **PIN lock** | Gates edit, delete, rename, budget changes, and clear-all (per device) |
-| **Swipe to delete** | With a confirm dialog *and* the PIN check before the row leaves |
+| **Swipe or long-press to delete** | Same order everywhere — confirm, then PIN — before the row leaves |
+| **Accessible** | Every custom control has screen-reader semantics, keyboard focus with a visible ring, and a 44pt target; text meets 4.5:1 contrast with a 12px floor; errors say how to recover and are announced |
+| **Purposeful motion** | Short, shared ease-out; new expenses fade in, the budget bar fills and turns pink when you go over, the sync badge crossfades. Everything honours the system reduce-motion setting |
 | **Thick black borders, hard shadows, zero rounded corners** | Neo-brutalism, applied consistently through one theme file |
 
 <details>
@@ -206,10 +209,12 @@ lib/
 ├── database/
 │   ├── expense_repository.dart # Firestore expenses + legacy SQLite migration
 │   ├── settings_repository.dart# Firestore users/{uid} + legacy prefs migration
+│   ├── sync_status.dart        # SYNCED / SYNCING / OFFLINE from snapshot metadata
 │   └── database_helper.dart    # legacy SQLite, read-only for migration
 ├── services/
 │   ├── auth.dart               # Google sign-in / sign-out
-│   └── reminder_service.dart   # schedules the "nothing logged" local notification
+│   ├── reminder_service.dart   # schedules the daily check-in notifications
+│   └── reminder_messages.dart  # picks the wording for each check-in
 ├── screens/
 │   ├── login_screen.dart
 │   ├── main_shell.dart         # drawer · tabs · FAB · bottom nav
@@ -218,11 +223,12 @@ lib/
 │   ├── add_expense_screen.dart
 │   ├── onboarding_screen.dart  # welcome · name · budget · categories · tutorial
 │   └── onboarding_pages.dart
-└── widgets/                    # drawer, options sheet, PIN dialog, cards, shared dialogs, animations
+└── widgets/                    # BrutalTap, drawer, options sheet, PIN dialog, cards, sync badge, animations
 
 firebase.json · .firebaserc     # Firebase CLI config (auth provider, rules)
 firestore.rules                 # security rules
 scripts/distribute.sh           # release build → Firebase App Distribution
+.github/workflows/              # internal-release.yml: Android build to testers on push to main
 ```
 
 ---
@@ -242,6 +248,8 @@ flutter test
 | `test/reminder_messages_test.dart` | Which message each check-in gets, and that stale figures never ship |
 | `test/sync_status_test.dart` | SYNCED / SYNCING / OFFLINE badge rules |
 | `test/drawer_initials_test.dart` | Drawer initials with stray whitespace (a release-only blank drawer) |
+| `test/brutal_tap_test.dart` | Custom controls expose button semantics and activate from the keyboard |
+| `test/enter_once_test.dart` | New rows animate in once and never replay on rebuild |
 
 The unit and widget tests need no Firebase: the bloc tests use a fake repository.
 
@@ -256,7 +264,15 @@ flows.
 
 ## Releasing to testers
 
-Internal builds go through **Firebase App Distribution** to the `internal` tester group:
+Internal builds go through **Firebase App Distribution** to the `internal` tester group.
+
+**Android ships automatically.** Every push to `main` runs
+[`internal-release.yml`](.github/workflows/internal-release.yml): `flutter analyze` and
+`flutter test` gate a signed release APK, which is uploaded to testers. It needs the
+`FIREBASE_SERVICE_ACCOUNT` and `ANDROID_KEYSTORE_*` / `ANDROID_KEY_*` repository secrets; without the
+service account it builds and attaches the APK as a workflow artifact instead.
+
+To release by hand (iOS always ships this way, since it needs Apple signing assets):
 
 ```bash
 scripts/distribute.sh android
@@ -267,9 +283,9 @@ The script builds a release binary, stamps a unique, increasing build number (mi
 override with `BUILD_NUMBER=…`), and uploads it with the latest commit as release notes. Other groups:
 `TESTER_GROUPS=beta scripts/distribute.sh android`.
 
-- **Android** release builds are currently signed with the **debug key** (see
-  `android/app/build.gradle.kts`). Before a Play Store release, add a real signing config and
-  register its SHA-1 in Firebase, or Google Sign-In will fail.
+- **Android** release signing reads `android/key.properties` (gitignored; CI writes it from
+  secrets). A fresh clone without it falls back to the **debug key**. Register the release key's
+  SHA-1 in Firebase, or Google Sign-In will fail.
 - **iOS** builds use a `development` export, so only devices registered in the Apple Developer
   account can install them.
 
